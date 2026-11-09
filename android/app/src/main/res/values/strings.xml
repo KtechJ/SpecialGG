@@ -2,5 +2,5 @@
 <resources>
     <string name="app_name">Special Gadi Ghar</string>
     <!-- The app opens this address. Change it here if the GitHub Pages link changes. -->
-    <string name="app_url" translatable="false">https://mrktechnicallevels-prog.github.io/ShopINvesntory_BahiKhataApp/</string>
+    <string name="app_url" translatable="false">https://ktechj.github.io/SpecialGG/</string>
 </resources>

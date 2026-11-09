@@ -77,7 +77,7 @@ public class MainActivity extends Activity {
         s.setAllowContentAccess(false);
         s.setSupportMultipleWindows(false);    // target="_blank" links come to shouldOverrideUrlLoading
         s.setMediaPlaybackRequiresUserGesture(true);
-        s.setUserAgentString(s.getUserAgentString() + " SpecialGadiGharApp/1.0");
+        s.setUserAgentString(s.getUserAgentString() + " SpecialGadiGharApp/1.1");
 
         web.addJavascriptInterface(new Bridge(), "AndroidApp");
         web.setWebChromeClient(new WebChromeClient());   // shows confirm() / alert() dialogs
@@ -121,7 +121,8 @@ public class MainActivity extends Activity {
 
     private boolean isAppPage(Uri u) {
         return "https".equals(u.getScheme()) && appUri.getHost().equalsIgnoreCase(u.getHost())
-                && u.getPath() != null && u.getPath().startsWith(appUri.getPath());
+                && u.getPath() != null
+                && u.getPath().toLowerCase(java.util.Locale.ROOT).startsWith(appUri.getPath().toLowerCase(java.util.Locale.ROOT));
     }
 
     private void openExternal(Uri u) {

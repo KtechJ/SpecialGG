@@ -13,7 +13,7 @@ APK. A new APK is needed only when something in this `android/` folder changes, 
 (`app/src/main/res/values/strings.xml` → `app_url`).
 
 The ready APK is published at `docs/SpecialGadiGhar.apk`, i.e.
-`https://mrktechnicallevels-prog.github.io/ShopINvesntory_BahiKhataApp/SpecialGadiGhar.apk`.
+`https://ktechj.github.io/SpecialGG/SpecialGadiGhar.apk`.
 
 ## Install on a phone
 1. Open the APK link above in Chrome on the phone → download.
