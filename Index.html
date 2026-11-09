@@ -1531,13 +1531,16 @@ async function vyView(name) {
           <div class="t">${b.invoice ? 'Bill ' + esc(b.invoice) : 'Bill / खरीद'} · ${esc(dmy(b.date))}</div>
           <div class="s">${esc(b.product)}${b.delivery ? ' · maal aaya ' + esc(dmy(b.delivery)) : ''}${b.note ? ' · ' + esc(b.note) : ''}</div>
           <div class="s">Amount ${money(b.amount)} · Paid ${money(b.paid)}</div>
-          ${b.canDelete ? `<button class="btn sm red" style="margin-top:4px;padding:4px 8px;font-size:12px" onclick="vyBillDel(${i})">Delete (wrong entry)</button>` : ''}</div>
+          ${b.canEdit ? `<div class="actions" style="margin-top:4px"><button class="btn sm alt" style="padding:4px 10px;font-size:12px" onclick="vyBillForm(${i})">✏️ Edit</button>
+            <button class="btn sm red" style="padding:4px 10px;font-size:12px" onclick="vyBillDel(${i})">\u{1F5D1} Delete</button></div>` : ''}</div>
         <div class="num">${b.pending > 0.5 ? `<div class="low">${money(b.pending)}</div><div class="s">pending</div>` : '<div class="ok">Paid ✓</div>'}</div></div>`).join('')}
       </div><h2 style="margin:14px 0 4px">Hisab · हिसाब</h2>` : ''}
     <div class="card list" style="margin-top:12px">
       ${v.rows.map((r, i) => `<div class="it"><div><div class="t" style="font-weight:500">${esc(r.text)}</div>
           <div class="s">${esc(String(r.date).slice(0, 10))} · balance ${money(r.balance)}</div>
-          ${r.receipt ? `<button class="btn sm alt" style="margin-top:4px;padding:4px 8px;font-size:12px" onclick="showReceipt(V.rows[${i}].receipt)">\u{1F9FE} Receipt</button>` : ''}</div>
+          ${r.receipt ? `<div class="actions" style="margin-top:4px"><button class="btn sm alt" style="padding:4px 10px;font-size:12px" onclick="showReceipt(V.rows[${i}].receipt)">\u{1F9FE} Receipt</button>
+            <button class="btn sm alt" style="padding:4px 10px;font-size:12px" onclick="vyPayForm(${i})">✏️ Edit</button>
+            <button class="btn sm red" style="padding:4px 10px;font-size:12px" onclick="vyPayDel(${i})">\u{1F5D1} Delete</button></div>` : ''}</div>
         <div class="num">${r.debit ? `<div class="low">+${money(r.debit)}</div>` : ''}${r.credit ? `<div class="ok">−${money(r.credit)}</div>` : ''}</div></div>`).join('')}
       ${v.opening ? `<div class="it"><div><div class="t" style="font-weight:500">Old due / पुराना बाकी</div></div><div class="num low">+${money(v.opening)}</div></div>` : ''}
       ${!v.rows.length && !v.opening ? '<div class="muted">No entries yet</div>' : ''}
@@ -1551,28 +1554,31 @@ function statementText(v) {
   L.push('', `- ${D.shop.owner}`);
   return L.join('\n');
 }
-function vyBillForm() {
-  const v = V;
-  openModal(`${sheetHead('\u{1F9FE} New bill / नया बिल: ' + esc(v.name))}
-    <div class="row"><div><label>Invoice / Bill No · बिल नं.</label><input id="bInv" placeholder="e.g. 1452"></div>
-      <div><label>Invoice date · बिल की तारीख</label><input id="bDate" type="date" value="${D.today}" max="${D.today}"></div></div>
+function vyBillForm(i) {
+  const v = V, b = i === undefined ? null : v.bills[i];
+  openModal(`${sheetHead(b ? '✏️ Edit bill / बिल बदलें' : '\u{1F9FE} New bill / नया बिल: ' + esc(v.name))}
+    <div class="row"><div><label>Invoice / Bill No · बिल नं.</label><input id="bInv" value="${esc(b ? b.invoice : '')}" placeholder="e.g. 1452"></div>
+      <div><label>Invoice date · बिल की तारीख</label><input id="bDate" type="date" value="${esc(b ? b.date : D.today)}" max="${D.today}"></div></div>
     <label>Product / raw material · माल</label>
-    <input id="bProd" placeholder="Rui 2 bori, Kapda 50 m, thread…">
+    <input id="bProd" value="${esc(b ? b.product : '')}" placeholder="Rui 2 bori, Kapda 50 m, thread…">
     <div class="chips">${D.raw.slice(0, 8).map(r => `<button type="button" onclick="$('bProd').value=this.textContent">${esc(r.name)}</button>`).join('')}</div>
-    <label>Bill amount · बिल की रकम (₹)</label><input id="bAmt" type="number" inputmode="decimal">
-    <label>Delivery date (maal aaya) · माल कब आया</label><input id="bDel" type="date" value="${D.today}">
-    <label>Note · नोट</label><input id="bNote" placeholder="optional">
-    <button class="btn full" onclick="doVyBill()">Save bill · बिल सेव करें</button>`);
+    <label>Bill amount · बिल की रकम (₹)</label><input id="bAmt" type="number" inputmode="decimal" value="${b ? b.amount : ''}">
+    <label>Delivery date (maal aaya) · माल कब आया</label><input id="bDel" type="date" value="${esc(b ? b.delivery : D.today)}">
+    <label>Note · नोट</label><input id="bNote" value="${esc(b ? b.note : '')}" placeholder="optional">
+    ${b && b.paid > 0 ? `<div class="muted">Paid so far on this bill: ${money(b.paid)} (payments are not changed here)</div>` : ''}
+    <button class="btn full" onclick="doVyBill('${b ? esc(b.billId) : ''}')">${b ? 'Save changes · बदलाव सेव करें' : 'Save bill · बिल सेव करें'}</button>`);
 }
-async function doVyBill() {
+async function doVyBill(billId) {
   // record only: a bill never changes stock (use Purchase for that)
-  await save('saveVyBill', { supplier: V.name, invoice: val('bInv'), invoiceDate: val('bDate'), product: val('bProd'),
-    amount: val('bAmt'), delivery: val('bDel'), note: val('bNote') });
+  const arg = { invoice: val('bInv'), invoiceDate: val('bDate'), product: val('bProd'), amount: val('bAmt'), delivery: val('bDel'), note: val('bNote') };
+  if (billId) await save('updateVyBill', Object.assign(arg, { billId }));
+  else await save('saveVyBill', Object.assign(arg, { supplier: V.name }));
   await vyView(V.name);
 }
 async function vyBillDel(i) {
   const b = V.bills[i];
-  if (!confirm(`Delete bill ${b.invoice || ''} (${money(b.amount)})? / यह बिल हटाएं?`)) return;
+  if (!confirm(`Delete bill ${b.invoice || ''} (${money(b.amount)})? / यह बिल हटाएं?` +
+    (b.paid > 0 ? `\n\nPayments made for it stay in the hisab (they will count against other bills / as advance). Delete the payment too if it was also wrong.` : ''))) return;
   await save('deleteVyBill', { billId: b.billId });
   await vyView(V.name);
 }
@@ -1581,25 +1587,44 @@ function vyPaySum() {
   document.querySelectorAll('.vyb:checked').forEach(c => { t += num(c.dataset.p); });
   if (document.querySelectorAll('.vyb:checked').length) $('yAmt').value = Math.round(t * 100) / 100;
 }
-function vyPayForm() {
-  const v = V;
-  openModal(`${sheetHead('Pay / भुगतान: ' + esc(v.name))}
-    <div class="total" style="font-size:16px"><span>Pending · बाकी</span><span class="low">${money(v.pending)}</span></div>
-    ${(v.bills || []).some(b => b.pending > 0.5) ? `<label>Paying for which bill? · किस बिल का भुगतान (optional)</label>
-      <div class="card list" style="padding:4px 10px">${v.bills.filter(b => b.pending > 0.5).map(b => `<label style="display:flex;gap:10px;align-items:center;margin:0;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px;color:var(--ink)">
-        <input type="checkbox" class="vyb" style="width:22px;height:22px;flex:0 0 auto" data-id="${esc(b.billId)}" data-p="${b.pending}" onchange="vyPaySum()">
+function vyPayForm(ri) {
+  const v = V, rc = ri === undefined ? null : v.rows[ri].receipt;
+  const tied = {};   // when editing: this payment's own share of each bill
+  if (rc) String(rc.billsRaw || '').split(',').filter(Boolean).forEach(t => { const k = t.lastIndexOf(':'); tied[t.slice(0, k)] = num(t.slice(k + 1)); });
+  const open = (v.bills || []).map(b => Object.assign({}, b, { pending: b.pending + (tied[b.billId] || 0), on: !!tied[b.billId] }))
+    .filter(b => b.pending > 0.5);
+  openModal(`${sheetHead(rc ? '✏️ Edit payment / भुगतान बदलें · ' + esc(rc.no) : 'Pay / भुगतान: ' + esc(v.name))}
+    <div class="total" style="font-size:16px"><span>Pending · बाकी</span><span class="low">${money(v.pending + (rc ? rc.amount : 0))}</span></div>
+    ${open.length ? `<label>Paying for which bill? · किस बिल का भुगतान (optional)</label>
+      <div class="card list" style="padding:4px 10px">${open.map(b => `<label style="display:flex;gap:10px;align-items:center;margin:0;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px;color:var(--ink)">
+        <input type="checkbox" class="vyb" style="width:22px;height:22px;flex:0 0 auto" data-id="${esc(b.billId)}" data-p="${b.pending}" ${b.on ? 'checked' : ''} onchange="vyPaySum()">
         <span style="flex:1">${b.invoice ? 'Bill ' + esc(b.invoice) : esc(b.product)} · ${esc(dmy(b.date))}<br><span class="muted">Amount ${money(b.amount)}${b.paid ? ' · paid ' + money(b.paid) : ''}</span></span>
         <b class="low">${money(b.pending)}</b></label>`).join('')}</div>` : ''}
-    <label>Amount · रकम</label><input id="yAmt" type="number" inputmode="decimal">
-    ${v.pending > 0 ? `<button class="btn alt sm" style="margin-top:8px" onclick="$('yAmt').value=${v.pending}">Full clear / पूरा हिसाब साफ़ (${money(v.pending)})</button>` : ''}
+    <label>Amount · रकम</label><input id="yAmt" type="number" inputmode="decimal" value="${rc ? rc.amount : ''}">
+    ${v.pending > 0 && !rc ? `<button class="btn alt sm" style="margin-top:8px" onclick="$('yAmt').value=${v.pending}">Full clear / पूरा हिसाब साफ़ (${money(v.pending)})</button>` : ''}
     <div class="row"><div><label>Mode · तरीका</label>${modeSelect('yMode')}</div>
-      <div><label>UTR / Cheque No · रेफ़रेंस</label><input id="yRef" placeholder="UTR or cheque no."></div></div>
-    <label>Payment date · भुगतान की तारीख</label><input id="yDate" type="date" value="${D.today}" max="${D.today}">
-    <label>Note · नोट</label><input id="yNote">
-    <button class="btn full" onclick="doVyPay()">Pay & make receipt · रसीद बनाएं</button>`);
+      <div><label>UTR / Cheque No · रेफ़रेंस</label><input id="yRef" value="${esc(rc ? rc.ref : '')}" placeholder="UTR or cheque no."></div></div>
+    <label>Payment date · भुगतान की तारीख</label><input id="yDate" type="date" value="${esc(rc ? rc.iso : D.today)}" max="${D.today}">
+    <label>Note · नोट</label><input id="yNote" value="${esc(rc ? rc.note : '')}">
+    <button class="btn full" onclick="doVyPay(${rc ? `'${esc(rc.no)}'` : ''})">${rc ? 'Save changes · बदलाव सेव करें' : 'Pay & make receipt · रसीद बनाएं'}</button>`);
+  if (rc) $('yMode').value = rc.mode || 'Cash';
 }
-async function doVyPay() {
+async function vyPayDel(ri) {
+  const rc = V.rows[ri].receipt;
+  if (!confirm(`Delete payment ${rc.no} of ${money(rc.amount)} (${rc.date})? / यह भुगतान हटाएं?\n\nThe amount will show as due again.`)) return;
+  await save('deleteVyPayment', { id: rc.no });
+  if (screen === 'vyapari') vyapari();
+  await vyView(V.name);
+}
+async function doVyPay(editId) {
   const amt = num(val('yAmt'));
+  if (editId) {
+    const bills = [...document.querySelectorAll('.vyb:checked')].map(c => ({ billId: c.dataset.id, amount: num(c.dataset.p) }));
+    await save('updateVyPayment', { id: editId, amount: val('yAmt'), mode: val('yMode'), ref: val('yRef'), date: val('yDate'), note: val('yNote'), bills });
+    if (screen === 'vyapari') vyapari();
+    await vyView(V.name);
+    return;
+  }
   if (amt > V.pending + 0.5 && !confirm(`Amount is more than pending (${money(V.pending)}). Continue? / बाकी से ज़्यादा है, फिर भी?`)) return;
   const bills = [...document.querySelectorAll('.vyb:checked')].map(c => ({ billId: c.dataset.id, amount: num(c.dataset.p) }));
   const r = await save('savePayment', { partyType: 'Supplier', party: V.name, amount: val('yAmt'), mode: val('yMode'), ref: val('yRef'), date: val('yDate'), note: val('yNote'), bills });
