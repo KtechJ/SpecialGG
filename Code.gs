@@ -676,6 +676,42 @@ function saveOrder(p) {
   });
 }
 
+/**
+ * Fix a wrong entry in an open (Pending / Ready) order: delivery date, customer, details, total, advance, note.
+ * Payments received later stay as they are; the total cannot go below what is already paid.
+ */
+function updateOrder(p) {
+  return run_(function () {
+    const o = readAll_('Orders').filter(function (r) { return str_(r.no) === str_(p.no); })[0];
+    if (!o) throw new Error('Order not found');
+    if (o.status !== 'Pending' && o.status !== 'Ready') throw new Error('Only open orders can be edited / सिर्फ़ चालू ऑर्डर बदल सकते हैं');
+    const customer = str_(p.customer), details = str_(p.details), delivery = str_(p.delivery);
+    if (!customer) throw new Error('Customer name needed / ग्राहक का नाम ज़रूरी');
+    if (!details) throw new Error('Write order details / ऑर्डर का विवरण लिखें');
+    if (!delivery) throw new Error('Choose delivery date / डिलीवरी की तारीख चुनें');
+    const amount = num_(p.amount), advance = num_(p.advance);
+    if (amount < 0 || advance < 0) throw new Error('Check amounts / रकम जांचें');
+    const payments = readAll_('Payments');
+    const later = (orderPaid_([o], payments)[str_(o.no)] || 0) - num_(o.advance);
+    if (amount > 0 && advance + later > amount + 0.5) {
+      throw new Error('Total is less than already paid (₹' + round2_(advance + later) + ') / कुल रकम जमा से कम है');
+    }
+    ensureCustomer_(customer, p.phone, p.address);
+    const f = { customer: customer, phone: str_(p.phone), details: details, amount: amount, advance: advance,
+      mode: mode_(p.mode), delivery: delivery, note: str_(p.note) };
+    if (str_(p.qty) !== '') f.qty = num_(p.qty) || 1;
+    if (str_(p.rate) !== '') f.rate = num_(p.rate);
+    if (p.weight !== undefined) f.weight = str_(p.weight);
+    Object.keys(f).forEach(function (k) { setField_('Orders', o._row, k, f[k]); });
+    if (key_(customer) !== key_(o.customer)) {   // keep this order's payments under the corrected name
+      payments.forEach(function (r) {
+        if (str_(r.orderNo) === str_(o.no) && (r.partyType === 'Order' || r.partyType === 'Refund')) setField_('Payments', r._row, 'party', customer);
+      });
+    }
+    return { msg: 'Order ' + o.no + ' updated / ऑर्डर बदल गया', orderNo: str_(o.no) };
+  });
+}
+
 function setOrderStatus(p) {
   return run_(function (by) {
     if (['Pending', 'Ready', 'Cancelled'].indexOf(p.status) < 0) throw new Error('Bad status');
@@ -1605,7 +1641,7 @@ const MAX_FAILS_ALL = 30;                // all people together, per hour → lo
 const API_FNS = ['getData', 'saveSale', 'savePurchase', 'makeGadi', 'makeForOrder', 'saveRecipe', 'saveOrder',
   'setOrderStatus', 'deliverOrder', 'savePayment', 'adjustStock', 'saveItem', 'saveRaw', 'getBahi', 'saveCashEntry',
   'deleteCashEntry', 'saveVyapari', 'vyapariStatement', 'saveCustomer', 'customerProfile', 'saveOrderPayment',
-  'getReport', 'exportReport', 'deleteSale', 'deleteOrder', 'partyHistory'];
+  'getReport', 'exportReport', 'deleteSale', 'deleteOrder', 'partyHistory', 'updateOrder'];
 
 function doPost(e) {
   let out;

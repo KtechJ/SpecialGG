@@ -50,6 +50,11 @@
   .line { border:1px dashed var(--line); border-radius:12px; padding:8px; margin-bottom:8px; }
   .total { display:flex; justify-content:space-between; font-size:18px; font-weight:700; margin-top:10px; }
   .muted { color:var(--muted); font-size:13px; }
+  .picks { margin-top:4px; border:1px solid var(--line); border-radius:10px; background:#fff; overflow:hidden; }
+  .picks:empty { display:none; }
+  .picks button { display:block; width:100%; text-align:left; background:#fff; border:0; border-bottom:1px solid var(--line); padding:10px 12px; font-size:15px; color:var(--ink); }
+  .picks button:last-child { border-bottom:0; }
+  .picks button .s { font-size:12px; color:var(--muted); }
   .pill { display:inline-block; font-size:12px; padding:2px 8px; border-radius:20px; background:var(--soft); color:var(--brand); font-weight:600; }
   .pill.Ready { background:#e6f4ea; color:var(--good); }
   .in { color:var(--good); } .out { color:var(--bad); }
@@ -354,11 +359,11 @@ function sale() {
     <div class="card">
       <h2>Customer · ग्राहक</h2>
       <div class="row">
-        <div><label>Name · नाम</label><input id="sCust" list="custList" value="${esc(f.cust)}" placeholder="Optional if fully paid" oninput="fillPhone('sCust','sPhone')"></div>
+        <div><label>Name · नाम</label><input id="sCust" autocomplete="off" value="${esc(f.cust)}" placeholder="Type to search old customer" oninput="fillPhone('sCust','sPhone');custSuggest('sCust','sPhone','sChip','','sPicks')"></div>
         <div><label>Mobile · मोबाइल</label><input id="sPhone" type="tel" inputmode="tel" value="${esc(f.phone)}" oninput="lookupClient('sPhone','sCust','sChip')"></div>
       </div>
+      <div id="sPicks" class="picks"></div>
       <div id="sChip" style="margin-top:6px"></div>
-      ${datalist('custList', D.clients.map(c => c.name))}
       <div class="row">
         <div><label>Discount · छूट</label><input id="sDisc" type="number" inputmode="decimal" value="${esc(f.disc || 0)}" oninput="saleTotals()"></div>
         <div><label>Paid now · अभी जमा</label><input id="sPaid" type="number" inputmode="decimal" value="${esc(f.paid)}" oninput="saleTotals()"></div>
@@ -391,6 +396,28 @@ function saleTotals() {
   const net = saleNet();
   $('sTotal').textContent = money(net);
   $('sBal').textContent = money(Math.max(0, net - num(val('sPaid'))));
+}
+/** Live search of old customers under a Name box (name or mobile). Tap one to fill name, mobile, address. */
+function custSuggest(nameId, phoneId, chipId, addrId, boxId) {
+  const q = val(nameId).toLowerCase(), box = $(boxId);
+  if (!box) return;
+  if (q.length < 2) { box.innerHTML = ''; return; }
+  const qd = q.replace(/\D/g, '');
+  const list = D.clients.filter(c => String(c.name).toLowerCase().includes(q) || (qd.length >= 3 && String(c.phone || '').includes(qd)))
+    .filter(c => String(c.name).toLowerCase() !== q || !val(phoneId)).slice(0, 6);
+  box.innerHTML = list.map(c => `<button type="button" onclick="custPick(${D.clients.indexOf(c)},'${nameId}','${phoneId}','${chipId}','${addrId || ''}','${boxId}')">
+      <b>${esc(c.name)}</b>${c.phone ? ' · ' + esc(c.phone) : ''}
+      <div class="s">${c.address ? esc(c.address) + ' · ' : ''}${num(c.orders)} orders${c.udhaar > 0 ? ` · udhaar ${money(c.udhaar)}` : ''}</div></button>`).join('');
+}
+function custPick(i, nameId, phoneId, chipId, addrId, boxId) {
+  const c = D.clients[i];
+  if (!c) return;
+  $(nameId).value = c.name;
+  if (c.phone) $(phoneId).value = c.phone;
+  if (addrId && $(addrId)) $(addrId).value = c.address || $(addrId).value;
+  $(boxId).innerHTML = '';
+  if (c.phone) lookupClient(phoneId, nameId, chipId, addrId);
+  else $(chipId).innerHTML = `<span class="pill Ready">✓ Old customer · पुराने ग्राहक</span> <span class="muted">${num(c.orders)} orders${c.udhaar > 0 ? ` · <b class="warn">udhaar ${money(c.udhaar)}</b>` : ''}</span>`;
 }
 function fillPhone(nameId, phoneId) {
   const c = D.clients.concat(D.customers, D.suppliers).find(x => x.name.toLowerCase() === val(nameId).toLowerCase() && x.phone);
@@ -768,6 +795,7 @@ function orders() {
               <button class="btn sm alt" onclick="orderStatus('${esc(o.no)}','Ready')">Ready (from stock)</button>` : ''}
             ${orderLeft(o) > 0 ? `<button class="btn sm alt" onclick="orderPayForm('${esc(o.no)}')">\u{1F4B0} Receive payment</button>` : ''}
             <button class="btn sm" onclick="deliverForm('${esc(o.no)}')">Deliver / डिलीवर</button>
+            <button class="btn sm alt" onclick="editOrderForm('${esc(o.no)}')">\u270F\uFE0F Edit</button>
             <button class="btn sm alt" onclick="showOrderReceipt(D.orders.find(x => x.no === '${esc(o.no)}'))">\u{1F9FE} Receipt</button>
             ${o.phone ? `<a class="btn sm green" target="_blank" href="${phoneLink(o.phone, readyText(o))}">${o.status === 'Ready' ? 'Tell ready' : 'Remind'}</a>` : ''}
             <button class="btn sm red" onclick="cancelForm('${esc(o.no)}')">Cancel</button>
@@ -785,17 +813,42 @@ function readyText(o) {
     ? `Namaste ${o.customer} ji \u{1F64F}\nAapka order taiyaar hai / आपका ऑर्डर तैयार है।\n${o.details}\n${due}\nKripya le jaayein. - ${D.shop.name}, ${D.shop.address}`
     : `Namaste ${o.customer} ji \u{1F64F}\nAapke order (${o.details}) ki delivery ${dmy(o.delivery)} ko hai.\n${due}\n- ${D.shop.name}, ${D.shop.phone}`;
 }
-let orderAmtTouched = false, orderMode = 'calc';
+let orderAmtTouched = false, orderMode = 'calc', newOrderMode = 'calc';
 // "Rui + Kapda + Labour" orders keep their breakdown in the details text, separated by " | ".
 const CALC_RUI = 'Rui/Kapas · रुई', CALC_KAP = 'Kapda · कपड़ा', CALC_LAB = 'Labour · मजदूरी';
 const isFabric = r => /fabric|kapda|cloth|कपड़ा/i.test(r.name);
 function orderParts(details) {
   const d = String(details || ''), n = re => { const m = d.match(re); return m ? Number(m[1].replace(/,/g, '')) : 0; };
-  if (d.indexOf(' | ') < 0 || d.indexOf(CALC_RUI) < 0) return null;
-  return { kg: n(/Rui\/Kapas[^:]*: ([\d.,]+) kg/), m: n(/Kapda[^:]*: ([\d.,]+) m/), labour: n(/Labour[^:]*: ₹([\d.,]+)/) };
+  if (d.indexOf(' | ') < 0 || (d.indexOf(CALC_RUI) < 0 && d.indexOf(CALC_KAP) < 0 && d.indexOf(CALC_LAB) < 0)) return null;
+  const ps = d.split(' | '), head = ps[0], qm = head.match(/^(\d+) x (.*)$/);
+  const known = t => t.indexOf(CALC_RUI + ':') === 0 || t.indexOf(CALC_KAP + ':') === 0 || t.indexOf(CALC_LAB + ':') === 0;
+  return { kg: n(/Rui\/Kapas[^:]*: ([\d.,]+) kg/), kgRate: n(/ kg × ₹([\d.,]+)/), m: n(/Kapda[^:]*: ([\d.,]+) m/),
+    mRate: n(/ m × ₹([\d.,]+)/), labour: n(/Labour[^:]*: ₹([\d.,]+)/),
+    qty: qm ? Number(qm[1]) : 1, what: qm ? qm[2] : head, extra: ps.slice(1).filter(t => !known(t)).join(' | ') };
+}
+function calcBlock(v) {
+  v = v || {};
+  const f = x => (x === undefined || x === null || x === 0 || x === '0') ? '' : esc(x);
+  return `<div id="oCalc">
+      <div class="row">
+        <div><label>What to make · क्या बनाना है</label><input id="oCWhat" value="${f(v.what)}" placeholder="Gadi / गादी"></div>
+        <div style="flex:0 0 90px"><label>Pieces · कितने</label><input id="oCQty" type="number" inputmode="numeric" value="${esc(v.qty || 1)}"></div>
+      </div>
+      <div class="row">
+        <div><label>Rui / Kapas (kg) · रुई</label><input id="oRuiKg" type="number" inputmode="decimal" value="${f(v.kg)}" placeholder="7" oninput="orderCalc()"></div>
+        <div><label>Price per kg · ₹/kg</label><input id="oRuiRate" type="number" inputmode="decimal" value="${f(v.kgRate)}" placeholder="350" oninput="orderCalc()"></div>
+      </div>
+      <div class="muted" id="oRuiAmt" style="text-align:right;margin-top:-4px"></div>
+      <div class="row">
+        <div><label>Kapda (meter) · कपड़ा</label><input id="oKapM" type="number" inputmode="decimal" value="${f(v.m)}" placeholder="5" oninput="orderCalc()"></div>
+        <div><label>Price per meter · ₹/m</label><input id="oKapRate" type="number" inputmode="decimal" value="${f(v.mRate)}" placeholder="90" oninput="orderCalc()"></div>
+      </div>
+      <div class="muted" id="oKapAmt" style="text-align:right;margin-top:-4px"></div>
+      <label>Labour charges · मजदूरी (₹)</label><input id="oLab" type="number" inputmode="decimal" value="${f(v.labour)}" placeholder="300" oninput="orderCalc()">
+    </div>`;
 }
 function orderModeSet(m) {
-  orderMode = m;
+  orderMode = newOrderMode = m;
   $('oCalc').classList.toggle('hidden', m !== 'calc');
   $('oStd').classList.toggle('hidden', m === 'calc');
   document.querySelectorAll('#oModeChips button').forEach(b => b.classList.toggle('on', b.dataset.m === m));
@@ -808,31 +861,15 @@ function orderForm(pre) {
   openModal(`${sheetHead('New order / नया ऑर्डर')}
     <label>Mobile · मोबाइल</label><input id="oPhone" type="tel" inputmode="tel" value="${esc(pre.phone)}" oninput="lookupClient('oPhone','oCust','oChip','oAddr')" placeholder="10 digit">
     <div id="oChip" style="margin-top:6px"></div>
-    <div class="row"><div><label>Name · नाम</label><input id="oCust" list="custList2" value="${esc(pre.name)}" oninput="fillPhone('oCust','oPhone')"></div>
+    <div class="row"><div><label>Name · नाम</label><input id="oCust" autocomplete="off" value="${esc(pre.name)}" placeholder="Type to search old customer" oninput="fillPhone('oCust','oPhone');custSuggest('oCust','oPhone','oChip','oAddr','oPicks')"></div>
       <div><label>Address · पता (optional)</label><input id="oAddr" value="${esc(pre.address)}"></div></div>
-    ${datalist('custList2', D.clients.map(c => c.name))}
+    <div id="oPicks" class="picks"></div>
     <label>Order type · ऑर्डर का प्रकार</label>
     <div class="chips" id="oModeChips">
       <button data-m="calc" onclick="orderModeSet('calc')">Rui + Kapda + Labour · हिसाब</button>
       <button data-m="std" onclick="orderModeSet('std')">Item × Qty · आइटम</button>
     </div>
-    <div id="oCalc">
-      <div class="row">
-        <div><label>What to make · क्या बनाना है</label><input id="oCWhat" placeholder="Gadi / गादी"></div>
-        <div style="flex:0 0 90px"><label>Pieces · कितने</label><input id="oCQty" type="number" inputmode="numeric" value="1"></div>
-      </div>
-      <div class="row">
-        <div><label>Rui / Kapas (kg) · रुई</label><input id="oRuiKg" type="number" inputmode="decimal" placeholder="7" oninput="orderCalc()"></div>
-        <div><label>Price per kg · ₹/kg</label><input id="oRuiRate" type="number" inputmode="decimal" value="${esc(lastRui)}" placeholder="350" oninput="orderCalc()"></div>
-      </div>
-      <div class="muted" id="oRuiAmt" style="text-align:right;margin-top:-4px"></div>
-      <div class="row">
-        <div><label>Kapda (meter) · कपड़ा</label><input id="oKapM" type="number" inputmode="decimal" placeholder="5" oninput="orderCalc()"></div>
-        <div><label>Price per meter · ₹/m</label><input id="oKapRate" type="number" inputmode="decimal" value="${esc(lastKap)}" placeholder="90" oninput="orderCalc()"></div>
-      </div>
-      <div class="muted" id="oKapAmt" style="text-align:right;margin-top:-4px"></div>
-      <label>Labour charges · मजदूरी (₹)</label><input id="oLab" type="number" inputmode="decimal" placeholder="300" oninput="orderCalc()">
-    </div>
+    ${calcBlock({ kgRate: lastRui, mRate: lastKap })}
     <div id="oStd" class="hidden">
     <label>Item · आइटम</label>
     <select id="oItem" onchange="orderItem()"><option value="">— Custom / अपनी मर्ज़ी का —</option>${opts(D.items, '', x => label(x))}</select>
@@ -856,7 +893,7 @@ function orderForm(pre) {
     <label>Note · नोट</label><input id="oNote">
     <button class="btn full" onclick="doOrder()">Save & make receipt · रसीद बनाएं</button>`);
   if (pre.phone) lookupClient('oPhone', 'oCust', 'oChip', 'oAddr');
-  orderModeSet(orderMode);
+  orderModeSet(newOrderMode);
 }
 function orderItem() {
   const it = itemById(val('oItem'));
@@ -888,10 +925,11 @@ async function doOrder() {
   const o = D.orders.find(x => x.no === r.orderNo);
   if (o) showOrderReceipt(o); else closeModal();
 }
-async function doCalcOrder() {
+/** Reads the Rui + Kapda + Labour fields; returns what saveOrder / updateOrder need, or null (with a message). */
+function calcOrderData() {
   const kg = num(val('oRuiKg')), kgRate = num(val('oRuiRate')), m = num(val('oKapM')), mRate = num(val('oKapRate'));
   const a = orderCalcAmounts(), qty = Math.max(1, Math.round(num(val('oCQty'))) || 1), extra = val('oExtra');
-  if (!kg && !m && !a.lab) { toast('Enter Rui kg, Kapda meter or Labour / रुई, कपड़ा या मजदूरी लिखें', true); return; }
+  if (!kg && !m && !a.lab) { toast('Enter Rui kg, Kapda meter or Labour / रुई, कपड़ा या मजदूरी लिखें', true); return null; }
   const what = val('oCWhat') || 'Gadi / गादी';
   const parts = [(qty > 1 ? qty + ' x ' : '') + what];
   if (kg) parts.push(`${CALC_RUI}: ${kg} kg × ₹${kgRate} = ${money(a.rui)}`);
@@ -901,13 +939,67 @@ async function doCalcOrder() {
   if (kgRate) store.set('sgg_rate_rui', String(kgRate));
   if (mRate) store.set('sgg_rate_kapda', String(mRate));
   const amount = val('oAmt') === '' ? a.total : num(val('oAmt'));
-  // what: '' keeps these one-off orders out of the item list; weight is per piece (used by "Make for this order").
-  const r = await save('saveOrder', { customer: val('oCust'), phone: val('oPhone'), address: val('oAddr'), itemId: '', what: '',
-    qty, rate: Math.round(amount / qty * 100) / 100, weight: kg ? String(Math.round(kg / qty * 1000) / 1000) : '',
-    details: parts.join(' | '), amount, advance: val('oAdv'), mode: val('oMode'), delivery: val('oDel'), note: val('oNote') });
+  // weight is per piece (used by "Make for this order")
+  return { qty, rate: Math.round(amount / qty * 100) / 100, weight: kg ? String(Math.round(kg / qty * 1000) / 1000) : '',
+    details: parts.join(' | '), amount };
+}
+async function doCalcOrder() {
+  const c = calcOrderData();
+  if (!c) return;
+  // what: '' keeps these one-off orders out of the item list
+  const r = await save('saveOrder', Object.assign(c, { customer: val('oCust'), phone: val('oPhone'), address: val('oAddr'), itemId: '', what: '',
+    advance: val('oAdv'), mode: val('oMode'), delivery: val('oDel'), note: val('oNote') }));
   render();
   const o = D.orders.find(x => x.no === r.orderNo);
   if (o) showOrderReceipt(o); else closeModal();
+}
+function editOrderForm(no) {
+  const o = D.orders.find(x => String(x.no) === String(no));
+  if (!o) return;
+  const op = orderParts(o.details);
+  orderMode = op ? 'calc' : 'std';
+  orderAmtTouched = true;   // keep the saved total until a calculator number is changed
+  openModal(`${sheetHead('Edit order / ऑर्डर बदलें · ' + esc(o.no))}
+    <div class="row"><div><label>Name · नाम</label><input id="oCust" value="${esc(o.customer)}"></div>
+      <div><label>Mobile · मोबाइल</label><input id="oPhone" type="tel" inputmode="tel" value="${esc(o.phone)}"></div></div>
+    ${op ? calcBlock(op) + `<label>Size / other details · साइज़ / और जानकारी</label><input id="oExtra" value="${esc(op.extra)}">`
+      : `<label>Order details · ऑर्डर का विवरण</label><textarea id="oDetails" rows="3">${esc(o.details)}</textarea>`}
+    <div class="row">
+      <div><label>Total · कुल</label><input id="oAmt" type="number" inputmode="decimal" value="${num(o.amount)}" oninput="orderAmtTouched=true;orderCalc()"></div>
+      <div><label>Advance · एडवांस</label><input id="oAdv" type="number" inputmode="decimal" value="${num(o.advance)}" oninput="orderCalc()"></div>
+      <div style="flex:0 0 95px"><label>Mode</label>${modeSelect('oMode')}</div>
+    </div>
+    <div class="muted">Paid after the order: ${money(orderPaid(o) - num(o.advance))} (not changed here)</div>
+    <div class="total" style="font-size:16px"><span>Remaining at delivery · बाकी</span><span id="oLeft" class="warn">₹0</span></div>
+    <label>Delivery date · डिलीवरी की तारीख</label><input id="oDel" type="date" value="${esc(String(o.delivery).slice(0, 10))}">
+    <div class="chips">${[3, 7, 10, 15].map(n => `<button onclick="$('oDel').value=addDays(D.today,${n})">+${n} days</button>`).join('')}</div>
+    <label>Note · नोट</label><input id="oNote" value="${esc(o.note)}">
+    <button class="btn full" onclick="doEditOrder('${esc(o.no)}')">Save changes · बदलाव सेव करें</button>`);
+  if ($('oMode')) $('oMode').value = o.mode || 'Cash';
+  if (op) ['oRuiKg', 'oRuiRate', 'oKapM', 'oKapRate', 'oLab'].forEach(id => $(id).addEventListener('input', () => { orderAmtTouched = false; orderCalc(); }));
+  orderCalc();
+  const later = orderPaid(o) - num(o.advance);
+  $('oLeft').textContent = money(Math.max(0, num(val('oAmt')) - num(val('oAdv')) - later));
+  ['oAmt', 'oAdv', 'oRuiKg', 'oRuiRate', 'oKapM', 'oKapRate', 'oLab'].forEach(id => $(id) && $(id).addEventListener('input',
+    () => { $('oLeft').textContent = money(Math.max(0, num(val('oAmt')) - num(val('oAdv')) - later)); }));
+}
+async function doEditOrder(no) {
+  const o = D.orders.find(x => String(x.no) === String(no));
+  let arg = { no, customer: val('oCust'), phone: val('oPhone'), advance: val('oAdv'), mode: val('oMode'),
+    delivery: val('oDel'), note: val('oNote') };
+  if (orderMode === 'calc') {
+    const c = calcOrderData();
+    if (!c) return;
+    arg = Object.assign(arg, c);
+  } else {
+    arg.details = val('oDetails'); arg.amount = val('oAmt');
+    if (num(o.qty) > 0 && val('oAmt') !== '') arg.rate = Math.round(num(val('oAmt')) / (num(o.qty) || 1) * 100) / 100;
+  }
+  if (!arg.delivery) { toast('Choose delivery date / डिलीवरी की तारीख चुनें', true); return; }
+  await save('updateOrder', arg);
+  render();
+  const u = D.orders.find(x => String(x.no) === String(no));
+  if (u) showOrderReceipt(u); else closeModal();
 }
 function orderPayForm(no) {
   const o = D.orders.find(x => String(x.no) === String(no));
