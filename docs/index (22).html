@@ -1,0 +1,1989 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Special Gadi Ghar</title>
+<meta name="theme-color" content="#1f4e79">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<script src="config.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root { --bg:#f4f1ea; --card:#fff; --ink:#1d1d1f; --muted:#6b6b70; --line:#e2ddd2; --brand:#1f4e79; --brand2:#2d6aa3;
+          --good:#1e7b45; --bad:#b3261e; --warn:#a15c00; --soft:#eaf1f8; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Devanagari",sans-serif; background:var(--bg); color:var(--ink); font-size:16px; }
+  header { position:sticky; top:0; z-index:5; background:var(--brand); color:#fff; display:flex; align-items:center; gap:8px; padding:10px 12px; }
+  header h1 { flex:1; font-size:18px; margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  header button { background:rgba(255,255,255,.15); color:#fff; border:0; border-radius:10px; font-size:18px; width:40px; height:40px; }
+  main { padding:12px; max-width:720px; margin:0 auto; padding-bottom:80px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px; margin-bottom:12px; }
+  .stats { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; }
+  .stat { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:10px 12px; }
+  .stat .l { font-size:12px; color:var(--muted); }
+  .stat .v { font-size:20px; font-weight:700; margin-top:2px; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; }
+  .tile { background:var(--brand); color:#fff; border:0; border-radius:14px; padding:16px 10px; font-size:16px; font-weight:600; text-align:center; line-height:1.3; }
+  .grid .tile:last-child:nth-child(odd) { grid-column:span 2; }
+  .tile span { display:block; font-size:26px; margin-bottom:4px; }
+  .tile small { display:block; font-weight:400; opacity:.85; }
+  h2 { font-size:16px; margin:4px 0 10px; }
+  label { display:block; font-size:13px; color:var(--muted); margin:10px 0 4px; }
+  input, select, textarea { width:100%; font-size:16px; padding:10px; border:1px solid var(--line); border-radius:10px; background:#fff; color:var(--ink); }
+  textarea { min-height:70px; }
+  .row { display:flex; gap:8px; align-items:flex-end; }
+  .row > * { flex:1; min-width:0; }
+  .btn { display:inline-block; border:0; border-radius:12px; padding:12px 16px; font-size:16px; font-weight:600; background:var(--brand); color:#fff; text-decoration:none; text-align:center; }
+  .btn.full { width:100%; margin-top:14px; }
+  .btn.alt { background:var(--soft); color:var(--brand); }
+  .btn.red { background:#fbe9e7; color:var(--bad); }
+  .btn.green { background:#25a35a; }
+  .btn.sm { padding:8px 10px; font-size:14px; border-radius:10px; }
+  .btn:disabled { opacity:.5; }
+  .list .it { display:flex; justify-content:space-between; gap:10px; padding:10px 0; border-bottom:1px solid var(--line); align-items:center; }
+  .list .it:last-child { border-bottom:0; }
+  .it .t { font-weight:600; }
+  .it .s { font-size:13px; color:var(--muted); margin-top:2px; }
+  .num { font-weight:700; white-space:nowrap; text-align:right; }
+  .low { color:var(--bad); }
+  .ok { color:var(--good); }
+  .warn { color:var(--warn); }
+  .tabs { display:flex; gap:6px; margin-bottom:12px; }
+  .tabs button { flex:1; border:1px solid var(--line); background:#fff; border-radius:10px; padding:10px; font-size:14px; font-weight:600; color:var(--muted); }
+  .tabs button.on { background:var(--brand); color:#fff; border-color:var(--brand); }
+  .line { border:1px dashed var(--line); border-radius:12px; padding:8px; margin-bottom:8px; }
+  .total { display:flex; justify-content:space-between; font-size:18px; font-weight:700; margin-top:10px; }
+  .muted { color:var(--muted); font-size:13px; }
+  .picks { margin-top:4px; border:1px solid var(--line); border-radius:10px; background:#fff; overflow:hidden; }
+  .picks:empty { display:none; }
+  .picks button { display:block; width:100%; text-align:left; background:#fff; border:0; border-bottom:1px solid var(--line); padding:10px 12px; font-size:15px; color:var(--ink); }
+  .picks button:last-child { border-bottom:0; }
+  .picks button .s { font-size:12px; color:var(--muted); }
+  .pill { display:inline-block; font-size:12px; padding:2px 8px; border-radius:20px; background:var(--soft); color:var(--brand); font-weight:600; }
+  .pill.Ready { background:#e6f4ea; color:var(--good); }
+  .in { color:var(--good); } .out { color:var(--bad); }
+  .datenav { display:flex; gap:8px; align-items:center; margin-bottom:12px; }
+  .datenav input { flex:1; }
+  .datenav button { flex:0 0 46px; height:44px; }
+  .sumrow { display:flex; justify-content:space-between; padding:6px 0; }
+  .sumrow.big { font-size:18px; font-weight:700; border-top:1px solid var(--line); margin-top:6px; padding-top:10px; }
+  .pill.soon { background:#fff1dc; color:var(--warn); }
+  .chips { display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
+  .chips button { border:1px solid var(--line); background:#fff; border-radius:20px; padding:6px 10px; font-size:13px; }
+  .chips button.on { background:var(--brand); color:#fff; border-color:var(--brand); }
+  .rplabel { flex:1; text-align:center; font-weight:700; }
+  .rptitle { font-size:14px; margin:12px 0 6px; }
+  .tblwrap { overflow-x:auto; margin-bottom:6px; }
+  table.rp { border-collapse:collapse; width:100%; font-size:13px; }
+  table.rp th { background:var(--brand); color:#fff; text-align:left; padding:6px; white-space:nowrap; font-weight:600; }
+  table.rp td { padding:6px; border-bottom:1px solid var(--line); vertical-align:top; }
+  table.rp td.n { text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums; }
+  table.rp tfoot td { font-weight:700; background:var(--soft); }
+  .pill.late { background:#fbe9e7; color:var(--bad); }
+  .actions { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+  #toast { position:fixed; left:50%; bottom:20px; transform:translateX(-50%); background:#222; color:#fff; padding:12px 16px; border-radius:12px; font-size:15px; max-width:92%; display:none; z-index:20; }
+  #toast.err { background:var(--bad); }
+  #modal { position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:10; display:flex; align-items:flex-end; justify-content:center; }
+  #modal.hidden, .hidden { display:none; }
+  #modal .sheet { background:var(--bg); width:100%; max-width:720px; max-height:92vh; overflow:auto; border-radius:18px 18px 0 0; padding:14px; }
+  .sheethead { display:flex; justify-content:space-between; align-items:center; }
+  .sheethead button { border:0; background:none; font-size:26px; color:var(--muted); }
+  pre.bill { white-space:pre-wrap; background:#fff; border:1px solid var(--line); border-radius:10px; padding:10px; font-size:14px; }
+  .loading { text-align:center; padding:40px; color:var(--muted); }
+  .busy { position:fixed; inset:0; background:rgba(255,255,255,.4); z-index:30; display:none; }
+</style>
+</head>
+<body>
+<header>
+  <button id="back" onclick="go('home')" aria-label="Back">←</button>
+  <h1 id="title">Shop</h1>
+  <button onclick="refresh()" aria-label="Refresh">⟳</button>
+</header>
+<main id="app"><div class="loading">Loading… / लोड हो रहा है…</div></main>
+<div id="toast"></div>
+<div class="busy" id="busy"></div>
+<div id="modal" class="hidden" onclick="if(event.target===this)closeModal()"><div class="sheet" id="modalBody"></div></div>
+<script>
+// Separate small script: if the main script below fails to run (e.g. Index.html pasted incompletely),
+// show the reason instead of "Loading…" forever.
+var INDEX_LINES = 1567;   // filled in below so the message can say how long the file must be
+function startFailed(reason) {
+  var a = document.getElementById('app');
+  if (!a || a.getAttribute('data-ok')) return;
+  a.innerHTML = '<div class="card" style="margin-top:20px"><h2 class="low">The app could not start · ऐप शुरू नहीं हुआ</h2>' +
+    '<div>' + String(reason).replace(/</g, '&lt;') + '</div>' +
+    '<div class="muted" style="margin-top:8px">The Index file in Apps Script is <b>incomplete or mixed with old text</b>. ' +
+    'It must have exactly <b>' + INDEX_LINES + ' lines</b>, first line &lt;!DOCTYPE html&gt;, last line &lt;/html&gt;.<br>' +
+    'Surest fix: in Apps Script delete the Index file (&#8942; &rarr; Delete), click + &rarr; HTML, name it Index, ' +
+    'paste Index.html from the copy page into the new empty file, Save, then Deploy &rarr; Manage deployments &rarr; Edit &rarr; New version.</div></div>';
+}
+window.addEventListener('error', function (e) {
+  startFailed((e.message || 'Script error') + (e.lineno ? ' (line ' + e.lineno + ')' : ''));
+});
+// A cut-off file gives no error at all (the browser just skips the unfinished script), so also check after 10 s.
+setTimeout(function () { startFailed('The main part of the app did not load.'); }, 10000);
+</script>
+
+<script>
+let D = null;            // data from the sheet
+let screen = 'home';
+let saleLines = [];
+let stockTab = 'Item', khataTab = 'Customer', purchaseKind = 'Raw';
+
+// ---------- helpers ----------
+const $ = id => document.getElementById(id);
+const val = id => ($(id) ? $(id).value.trim() : '');
+const num = v => { const n = Number(v); return isFinite(n) ? n : 0; };
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const money = n => { const v = Math.round(num(n)); return (v < 0 ? '−₹' : '₹') + Math.abs(v).toLocaleString('en-IN'); };
+const label = it => (String(it.name) + ' ' + String(it.size || '')).trim();
+const itemById = id => D.items.find(i => String(i.id) === String(id));
+const rawById = id => D.raw.find(i => String(i.id) === String(id));
+const tracked = it => it.track !== 'No';   // items added from a typed sale are not stock-counted
+const isLow = it => tracked(it) && (num(it.stock) <= 0 || (num(it.low) > 0 && num(it.stock) <= num(it.low)));
+const stockTag = x => tracked(x) ? ' (stock ' + num(x.stock) + ')' : '';
+
+function toast(msg, err) {
+  const t = $('toast'); t.textContent = msg; t.className = err ? 'err' : ''; t.style.display = 'block';
+  clearTimeout(t._h); t._h = setTimeout(() => t.style.display = 'none', err ? 5000 : 2500);
+}
+// Two ways to run: inside Google Apps Script (google.script.run, Google login), or as the installed
+// Android app (window.SHOP_APP from config.js: talks to the script's doPost with a PIN login token).
+const APP = window.SHOP_APP && window.SHOP_APP.url ? window.SHOP_APP : null;
+const store = {
+  get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set: (k, v) => { try { v === null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) { /* private mode */ } }
+};
+function api(fn, arg, quiet) {
+  $('busy').style.display = 'block';
+  const done = () => { $('busy').style.display = 'none'; };
+  if (APP) {
+    // text/plain keeps this a "simple" request, so the browser does not need a CORS preflight
+    return fetch(APP.url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ fn, arg, token: store.get('sgg_token') }) })
+      .then(r => r.json())
+      .then(j => {
+        done();
+        if (j.ok) return j.result;
+        const err = new Error(j.error);
+        if (String(j.error).indexOf('AUTH') === 0) { store.set('sgg_token', null); loginScreen(); }
+        else if (!quiet) toast(j.error, true);
+        throw err;
+      }, e => { done(); const err = new Error('No internet or server not reachable / इंटरनेट जांचें'); if (!quiet) toast(err.message, true); throw err; });
+  }
+  return new Promise((res, rej) => {
+    google.script.run
+      .withSuccessHandler(r => { done(); res(r); })
+      .withFailureHandler(e => { done(); if (!quiet) toast(e.message || String(e), true); rej(e); })[fn](arg);
+  });
+}
+// ---- PIN login (Android app only)
+async function loginScreen() {
+  closeModal();
+  $('back').style.visibility = 'hidden';
+  $('title').textContent = APP.shop || 'Special Gadi Ghar';
+  $('app').innerHTML = '<div class="loading">Loading… / लोड हो रहा है…</div>';
+  let info = { users: [] };
+  try { info = await api('users', null, true); } catch (e) { /* shown below */ }
+  const last = store.get('sgg_user') || '';
+  $('app').innerHTML = `<div class="card" style="max-width:420px;margin:20px auto">
+      <h2>Log in · लॉगिन</h2>
+      ${info.users.length ? `<label>Who are you? · आप कौन हैं?</label>
+        <div class="chips">${info.users.map(u => `<button class="${u === last ? 'on' : ''}" onclick="document.querySelectorAll('.chips button').forEach(b=>b.classList.remove('on'));this.classList.add('on');$('lgName').value=this.textContent">${esc(u)}</button>`).join('')}</div>
+        <input id="lgName" type="hidden" value="${esc(last && info.users.includes(last) ? last : (info.users.length === 1 ? info.users[0] : ''))}">
+        <label>PIN</label><input id="lgPin" type="password" inputmode="numeric" autocomplete="current-password" maxlength="8" placeholder="6–8 digits"
+          onkeydown="if(event.key==='Enter')doLogin()">
+        <button class="btn full" onclick="doLogin()">Log in · लॉगिन करें</button>`
+      : `<div class="low">Could not reach the shop server, or no PIN has been set yet.</div>
+        <div class="muted" style="margin-top:6px">Check internet. The owner sets PINs in the Google Sheet: menu <b>Shop → Set app PIN</b>.</div>
+        <button class="btn full alt" onclick="loginScreen()">Try again · फिर से</button>`}
+    </div>`;
+}
+async function doLogin() {
+  const name = val('lgName'), pin = val('lgPin');
+  if (!name) { toast('Tap your name first / अपना नाम चुनें', true); return; }
+  if (!pin) { toast('Enter your PIN / PIN डालें', true); return; }
+  let r;
+  try { r = await api('login', { name, pin }); } catch (e) { $('lgPin').value = ''; return; }   // message already shown
+  store.set('sgg_token', r.token); store.set('sgg_user', r.user);
+  start();
+}
+async function logout() {
+  try { await api('logout', null, true); } catch (e) { /* already logged out */ }
+  store.set('sgg_token', null);
+  loginScreen();
+}
+/** Calls a write function, refreshes data, shows message. */
+async function save(fn, arg, quiet) {
+  const r = await api(fn, arg, quiet);
+  D = r.data; toast(r.msg || 'Saved');
+  return r;
+}
+function openModal(html) { $('modalBody').innerHTML = html; $('modal').classList.remove('hidden'); }
+function closeModal() { $('modal').classList.add('hidden'); }
+function sheetHead(t) { return `<div class="sheethead"><h2>${t}</h2><button onclick="closeModal()">×</button></div>`; }
+function opts(list, sel, text) {
+  return list.map(x => `<option value="${esc(x.id)}" ${String(x.id) === String(sel) ? 'selected' : ''}>${esc(text(x))}</option>`).join('');
+}
+function datalist(id, names) { return `<datalist id="${id}">${names.map(n => `<option value="${esc(n)}">`).join('')}</datalist>`; }
+function phoneLink(phone, text) {
+  let p = String(phone || '').replace(/\D/g, '');
+  if (p.length === 10) p = '91' + p;
+  return 'https://wa.me/' + p + '?text=' + encodeURIComponent(text);
+}
+function modeSelect(id, sel) { return `<select id="${id}">${['Cash', 'UPI', 'Bank', 'Cheque'].map(m => `<option ${m === sel ? 'selected' : ''}>${m}</option>`).join('')}</select>`; }
+function dmy(iso) { const d = String(iso || '').slice(0, 10); return d.length === 10 ? d.split('-').reverse().join('-') : d; }
+function daysLeft(iso) { return Math.round((new Date(String(iso).slice(0, 10) + 'T00:00:00') - new Date(D.today + 'T00:00:00')) / 86400000); }
+function dueLabel(iso) {
+  const n = daysLeft(iso);
+  if (n < 0) return { text: `Late ${-n} day${n < -1 ? 's' : ''} · ${-n} दिन देर`, cls: 'late' };
+  if (n === 0) return { text: 'Today · आज', cls: 'late' };
+  if (n === 1) return { text: 'Tomorrow · कल', cls: 'soon' };
+  return { text: `In ${n} days · ${n} दिन बाद`, cls: '' };
+}
+function clientByPhone(ph) { const d = String(ph || '').replace(/\D/g, '').slice(-10); return d.length === 10 ? D.clients.find(c => c.phone === d) : null; }
+/** When a 10-digit mobile is typed: fill name/address of an old customer and show a note. */
+function lookupClient(phoneId, nameId, chipId, addrId) {
+  const d = val(phoneId).replace(/\D/g, '');
+  const chip = $(chipId);
+  if (d.length < 10) { chip.innerHTML = ''; return; }
+  const c = clientByPhone(d);
+  if (c) {
+    if (!val(nameId)) $(nameId).value = c.name;
+    if (addrId && $(addrId) && !val(addrId)) $(addrId).value = c.address;
+    chip.innerHTML = `<span class="pill Ready">✓ Old customer · पुराने ग्राहक</span> <span class="muted">${c.orders} orders${c.udhaar > 0 ? ` · <b class="warn">udhaar ${money(c.udhaar)}</b>` : ''} · last ${esc(dmy(c.last))}</span>`;
+  } else chip.innerHTML = '<span class="pill">New customer · नया ग्राहक</span>';
+}
+function orderPaid(o) { return o.paid !== undefined && o.paid !== '' ? num(o.paid) : num(o.advance); }
+function orderLeft(o) { return Math.max(0, Math.round((num(o.amount) - orderPaid(o)) * 100) / 100); }
+function addDays(iso, n) { const d = new Date(iso + 'T00:00:00'); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); }
+
+// ---------- navigation ----------
+const SCREENS = {
+  home:     ['\u{1F3E0}', 'Home', 'होम'],
+  sale:     ['\u{1F9FE}', 'New Sale', 'बिक्री'],
+  stock:    ['\u{1F6CF}️', 'Stock', 'स्टॉक'],
+  make:     ['\u{1F9F5}', 'Make Gadi', 'गादी बनाओ'],
+  purchase: ['\u{1F69A}', 'Purchase', 'खरीद'],
+  orders:   ['\u{1F4CB}', 'Orders', 'ऑर्डर'],
+  vyapari:  ['\u{1F3EA}', 'Vyapari Khata', 'व्यापारी · देना है'],
+  khata:    ['\u{1F465}', 'Customers', 'ग्राहक · उधार'],
+  bahi:     ['\u{1F4D4}', 'Bahi Khata', 'बही खाता · रोकड़'],
+  reports:  ['\u{1F4CA}', 'Reports', 'रिपोर्ट · PDF / Excel']
+};
+function go(s) {
+  screen = s;
+  if (s === 'sale' && !saleLines.length) saleLines = [{ id: '', qty: 1, price: '' }];
+  $('back').style.visibility = s === 'home' ? 'hidden' : 'visible';
+  $('title').textContent = s === 'home' ? D.shop.name : SCREENS[s][1] + ' · ' + SCREENS[s][2];
+  window.scrollTo(0, 0);
+  render();
+}
+function render() { ({ home, sale, stock, make, purchase, orders, khata, bahi, vyapari, reports })[screen](); }
+async function refresh() { D = await api('getData'); render(); toast('Updated / अपडेट हुआ'); }
+
+// ---------- Home ----------
+function home() {
+  const d = D.dash;
+  const lowItems = D.items.filter(isLow), lowRaw = D.raw.filter(isLow);
+  const soon = addDays(D.today, D.remindDays || 3);
+  const due = D.orders.filter(o => (o.status === 'Pending' || o.status === 'Ready') && o.delivery && String(o.delivery).slice(0, 10) <= soon)
+    .sort((a, b) => String(a.delivery).localeCompare(String(b.delivery)));
+  $('app').innerHTML = `
+    ${D.encodingOk === false ? `<div class="card" style="border:2px solid var(--bad)"><h2 class="low">⚠️ Code.gs was pasted with broken Hindi letters</h2>
+      <div>Hindi text from Code.gs looks like <code>‡§ö‡§≤‡§æ</code>. Copy <b>Code.gs</b> again from the copy page (not from a file opened in TextEdit/Notepad),
+      paste it over the old one in Apps Script, Save, then <b>Deploy → Manage deployments → Edit → New version</b>.
+      Then fix the headings by running <b>setup</b> once.</div></div>` : ''}
+    ${due.length ? `<div class="card" style="border:2px solid var(--warn)"><h2>\u{1F4C5} Deliveries coming · डिलीवरी करनी है (${due.length})</h2><div class="list">${due.map(o => {
+      const dl = dueLabel(o.delivery);
+      return `<div class="it" onclick="go('orders')"><div><div class="t">${esc(o.customer)} <span class="pill ${dl.cls}">${dl.text}</span></div>
+        <div class="s">${esc(o.details)}</div>
+        <div class="s">${esc(dmy(o.delivery))} · Baki <b>${money(orderLeft(o))}</b>${o.status === 'Ready' ? ' · <span class="ok">Ready ✓</span>' : ''}</div></div>
+        ${o.phone ? `<a class="btn sm alt" href="tel:${esc(o.phone)}" onclick="event.stopPropagation()">\u{1F4DE}</a>` : ''}</div>`; }).join('')}</div></div>` : ''}
+    <div class="stats">
+      <div class="stat"><div class="l">Today Sale · आज बिक्री</div><div class="v">${money(d.todaySales)}</div><div class="muted">${d.todayBills} bills</div></div>
+      <div class="stat"><div class="l">Today Cash In · आज जमा</div><div class="v ok">${money(d.todayCollect)}</div></div>
+      <div class="stat"><div class="l">Month Sale · महीने की बिक्री</div><div class="v">${money(d.monthSales)}</div></div>
+      <div class="stat"><div class="l">Month Profit · मुनाफ़ा</div><div class="v ok">${money(d.monthProfit)}</div></div>
+      <div class="stat" onclick="go('khata')"><div class="l">To Take · लेना है</div><div class="v warn">${money(d.toTake)}</div></div>
+      <div class="stat" onclick="go('vyapari')"><div class="l">To Pay · देना है</div><div class="v low">${money(d.toPay)}</div></div>
+      <div class="stat" onclick="go('bahi')"><div class="l">Cash in galla · गल्ले में</div><div class="v">${money(d.cash)}</div></div>
+      <div class="stat" onclick="go('bahi')"><div class="l">Bank / UPI · बैंक</div><div class="v">${money(d.bank)}</div></div>
+    </div>
+    <div class="grid">
+      ${['sale', 'stock', 'make', 'purchase', 'orders', 'vyapari', 'khata', 'bahi', 'reports'].map(k =>
+        `<button class="tile" onclick="go('${k}')"><span>${SCREENS[k][0]}</span>${SCREENS[k][1]}<small>${SCREENS[k][2]}</small></button>`).join('')}
+    </div>
+    ${lowItems.length || lowRaw.length ? `<div class="card"><h2>⚠️ Low stock · स्टॉक कम है</h2><div class="list">
+      ${lowItems.map(i => `<div class="it"><div class="t">${esc(label(i))}</div><div class="num low">${num(i.stock)}</div></div>`).join('')}
+      ${lowRaw.map(i => `<div class="it"><div class="t">${esc(i.name)} <span class="pill">raw</span></div><div class="num low">${num(i.stock)} ${esc(i.unit)}</div></div>`).join('')}
+    </div></div>` : ''}
+    <div class="card"><h2>Recent sales · हाल की बिक्री</h2><div class="list">
+      ${D.recentSales.length ? D.recentSales.map(s => `<div class="it" onclick="saleView('${esc(s.bill)}')" style="cursor:pointer"><div><div class="t">${esc(s.bill)} · ${esc(s.customer || 'Cash customer')}</div>
+        <div class="s">${esc(String(s.date).slice(0, 16))} · ${esc(s.items)}</div></div>
+        <div class="num">${money(s.net)}${num(s.balance) > 0 ? `<div class="s warn">baki ${money(s.balance)}</div>` : ''}</div></div>`).join('')
+        : '<div class="muted">No sales yet / अभी कोई बिक्री नहीं</div>'}
+    </div></div>
+    <div class="muted" style="text-align:center">${D.user ? 'Logged in: ' + esc(D.user) : ''}
+      ${APP ? ' · <button class="btn sm alt" onclick="logout()">Log out · लॉगआउट</button>' : ''}</div>`;
+}
+
+// ---------- Sale ----------
+let saleForm = {};   // customer/amount fields, kept when lines are added or removed
+function saleKeep() {
+  if ($('sCust')) saleForm = { cust: val('sCust'), phone: val('sPhone'), disc: val('sDisc'), paid: val('sPaid'), mode: val('sMode') };
+}
+function sale() {
+  saleKeep();
+  const f = saleForm;
+  const sellable = D.items.filter(i => String(i.id));
+  $('app').innerHTML = `
+    <div class="card">
+      <h2>Items · सामान</h2>
+      <div id="lines">${saleLines.map((l, i) => l.oneoff ? `
+        <div class="line">
+          <div class="t">\u{1F9F5} ${String(l.name).split(' | ').map(esc).join('<br><span class="muted">') + (String(l.name).includes(' | ') ? '</span>' : '')}</div>
+          <div class="row">
+            <div><label>Pieces · कितने</label><input type="number" inputmode="numeric" min="1" value="${esc(l.qty)}" oninput="saleLines[${i}].qty=this.value;saleTotals()"></div>
+            <div><label>Price each · दाम</label><input type="number" inputmode="decimal" value="${esc(l.price)}" oninput="saleLines[${i}].price=this.value;saleTotals()"></div>
+            <button class="btn sm red" style="flex:0" onclick="saleLines.splice(${i},1);if(!saleLines.length)saleLines.push({id:'',qty:1,price:''});sale()">✕</button>
+          </div>
+        </div>` : `
+        <div class="line">
+          <select onchange="lineItem(${i}, this.value)">
+            <option value="">— Select item / आइटम चुनें —</option>
+            <option value="__custom" ${l.custom ? 'selected' : ''}>✏️ Not in list – type it / लिस्ट में नहीं – लिखें</option>
+            ${opts(sellable, l.id, x => label(x) + stockTag(x))}
+          </select>
+          ${l.custom ? `<label>Item name · आइटम का नाम</label>
+            <input id="cname${i}" value="${esc(l.name)}" placeholder="e.g. Pillow cover, Mosquito net" oninput="saleLines[${i}].name=this.value">` : ''}
+          <div class="row">
+            <div><label>Qty · संख्या</label><input type="number" inputmode="numeric" min="1" value="${esc(l.qty)}" oninput="saleLines[${i}].qty=this.value;saleTotals()"></div>
+            <div><label>Price · दाम</label><input type="number" inputmode="decimal" id="price${i}" value="${esc(l.price)}" oninput="saleLines[${i}].price=this.value;saleTotals()"></div>
+            ${l.custom ? `<div><label>Cost (optional) · लागत</label><input type="number" inputmode="decimal" value="${esc(l.cost)}" placeholder="for profit" oninput="saleLines[${i}].cost=this.value"></div>` : ''}
+            ${saleLines.length > 1 ? `<button class="btn sm red" style="flex:0" onclick="saleLines.splice(${i},1);sale()">✕</button>` : ''}
+          </div>
+          ${l.custom ? '<div class="muted">It will be added to your item list with this price, so next time you can pick it. · अगली बार लिस्ट में मिलेगा।</div>' : ''}
+        </div>`).join('')}
+      </div>
+      <button class="btn alt sm" onclick="saleLines.push({id:'',qty:1,price:''});sale()">+ Add item / और आइटम</button>
+      <button class="btn alt sm" onclick="saleGadiForm()">\u{1F9F5} + Add Gadi (Rui + Kapda + Labour)</button>
+    </div>
+    <div class="card">
+      <h2>Customer · ग्राहक</h2>
+      <div class="row">
+        <div><label>Name · नाम</label><input id="sCust" autocomplete="off" value="${esc(f.cust)}" placeholder="Type to search old customer" oninput="fillPhone('sCust','sPhone');custSuggest('sCust','sPhone','sChip','','sPicks')"></div>
+        <div><label>Mobile · मोबाइल</label><input id="sPhone" type="tel" inputmode="tel" value="${esc(f.phone)}" oninput="lookupClient('sPhone','sCust','sChip')"></div>
+      </div>
+      <div id="sPicks" class="picks"></div>
+      <div id="sChip" style="margin-top:6px"></div>
+      <div class="row">
+        <div><label>Discount · छूट</label><input id="sDisc" type="number" inputmode="decimal" value="${esc(f.disc || 0)}" oninput="saleTotals()"></div>
+        <div><label>Paid now · अभी जमा</label><input id="sPaid" type="number" inputmode="decimal" value="${esc(f.paid)}" oninput="saleTotals()"></div>
+        <div style="flex:0 0 100px"><label>Mode · तरीका</label>${modeSelect('sMode', f.mode)}</div>
+      </div>
+      <button class="btn alt sm" style="margin-top:8px" onclick="$('sPaid').value=saleNet();saleTotals()">Full paid / पूरा जमा</button>
+      <div class="total"><span>Total · कुल</span><span id="sTotal">₹0</span></div>
+      <div class="total" style="font-size:15px"><span>Balance (udhaar) · बाकी</span><span id="sBal" class="warn">₹0</span></div>
+      <button class="btn full" onclick="doSale()">Save Bill · बिल सेव करें</button>
+    </div>`;
+  if (f.phone) lookupClient('sPhone', 'sCust', 'sChip');
+  saleTotals();
+}
+/** New Sale: a made-to-measure gadi from Rui + Kapda + Labour, added to the bill as one line (not added to the item list). */
+function saleGadiForm() {
+  saleKeep();
+  orderMode = 'calc'; orderAmtTouched = false; oExp = []; oCItems = [];
+  openModal(`${sheetHead('\u{1F9F5} Gadi · Rui + Kapda + Labour')}
+    ${calcBlock({ noItems: true, kgRate: store.get('sgg_rate_rui') || '', mRate: store.get('sgg_rate_kapda') || '' })}
+    <label>Size / other details · साइज़ / और जानकारी</label><input id="oExtra" placeholder="6x5 ft, 5 inch">
+    <label>Total · कुल</label><input id="oAmt" type="number" inputmode="decimal" oninput="orderAmtTouched=true">
+    <span id="oLeft" class="hidden"></span><input id="oAdv" type="hidden" value="0">
+    <button class="btn full" onclick="saleGadiAdd()">Add to bill · बिल में जोड़ें</button>`);
+  drawOExp();
+}
+function saleGadiAdd() {
+  const c = calcOrderData();
+  if (!c) return;
+  saleLines = saleLines.filter(l => l.id || l.custom || l.oneoff);
+  saleLines.push({ oneoff: true, name: c.details.replace(/^\d+ x /, ''), qty: c.qty, price: c.rate, cost: '' });
+  closeModal(); sale();
+}
+function lineItem(i, id) {
+  const l = saleLines[i];
+  if (id === '__custom') {
+    Object.assign(l, { id: '', custom: true, price: '', name: l.name || '', cost: '' });
+    sale(); if ($('cname' + i)) $('cname' + i).focus();
+    return;
+  }
+  const wasCustom = l.custom;
+  Object.assign(l, { id, custom: false });
+  const it = itemById(id);
+  if (it) l.price = num(it.price);
+  if (wasCustom) sale(); else { if (it) $('price' + i).value = num(it.price); saleTotals(); }
+}
+function saleNet() { return saleLines.reduce((s, l) => s + num(l.qty) * num(l.price), 0) - num(val('sDisc')); }
+function saleTotals() {
+  if (!$('sTotal')) return;
+  const net = saleNet();
+  $('sTotal').textContent = money(net);
+  $('sBal').textContent = money(Math.max(0, net - num(val('sPaid'))));
+}
+/** Live search of old customers under a Name box (name or mobile). Tap one to fill name, mobile, address. */
+function custSuggest(nameId, phoneId, chipId, addrId, boxId) {
+  const q = val(nameId).toLowerCase(), box = $(boxId);
+  if (!box) return;
+  if (q.length < 2) { box.innerHTML = ''; return; }
+  const qd = q.replace(/\D/g, '');
+  const list = D.clients.filter(c => String(c.name).toLowerCase().includes(q) || (qd.length >= 3 && String(c.phone || '').includes(qd)))
+    .filter(c => String(c.name).toLowerCase() !== q || !val(phoneId)).slice(0, 6);
+  box.innerHTML = list.map(c => `<button type="button" onclick="custPick(${D.clients.indexOf(c)},'${nameId}','${phoneId}','${chipId}','${addrId || ''}','${boxId}')">
+      <b>${esc(c.name)}</b>${c.phone ? ' · ' + esc(c.phone) : ''}
+      <div class="s">${c.address ? esc(c.address) + ' · ' : ''}${num(c.orders)} orders${c.udhaar > 0 ? ` · udhaar ${money(c.udhaar)}` : ''}</div></button>`).join('');
+}
+function custPick(i, nameId, phoneId, chipId, addrId, boxId) {
+  const c = D.clients[i];
+  if (!c) return;
+  $(nameId).value = c.name;
+  if (c.phone) $(phoneId).value = c.phone;
+  if (addrId && $(addrId)) $(addrId).value = c.address || $(addrId).value;
+  $(boxId).innerHTML = '';
+  if (c.phone) lookupClient(phoneId, nameId, chipId, addrId);
+  else $(chipId).innerHTML = `<span class="pill Ready">✓ Old customer · पुराने ग्राहक</span> <span class="muted">${num(c.orders)} orders${c.udhaar > 0 ? ` · <b class="warn">udhaar ${money(c.udhaar)}</b>` : ''}</span>`;
+}
+function fillPhone(nameId, phoneId) {
+  const c = D.clients.concat(D.customers, D.suppliers).find(x => x.name.toLowerCase() === val(nameId).toLowerCase() && x.phone);
+  if (c && c.phone && !val(phoneId)) $(phoneId).value = c.phone;
+}
+async function doSale(allowShort) {
+  const bad = saleLines.find(l => l.custom && !String(l.name || '').trim() && num(l.qty) > 0);
+  if (bad) { toast('Write the item name / आइटम का नाम लिखें', true); return; }
+  const args = { lines: saleLines.map(l => l.oneoff ? { name: l.name, qty: l.qty, price: l.price, cost: l.cost, oneoff: true }
+      : l.custom ? { name: l.name, qty: l.qty, price: l.price, cost: l.cost } : { id: l.id, qty: l.qty, price: l.price }),
+    customer: val('sCust'), phone: val('sPhone'), discount: val('sDisc'), paid: val('sPaid'), mode: val('sMode'), allowShort: !!allowShort };
+  let r;
+  try { r = await save('saveSale', args, true); }
+  catch (e) {
+    const m = String((e && e.message) || e);
+    if (m.indexOf('STOCK_SHORT') >= 0) {
+      saleKeep();
+      openModal(`${sheetHead('Stock is low · स्टॉक कम है')}
+        <div>${esc(m.replace(/^.*STOCK_SHORT:\s*/, ''))}.</div>
+        <div class="muted" style="margin-top:6px">If the item is really in the shop, the stock count in the app is probably not entered yet.
+          You can sell anyway (stock will show minus), and fix it later with Stock → Correct stock.</div>
+        <button class="btn full" onclick="closeModal();doSale(true)">Sell anyway · फिर भी बेचें</button>
+        <button class="btn full alt" onclick="closeModal()">Go back · वापस</button>`);
+    } else toast(m, true);
+    return;
+  }
+  saleLines = []; saleForm = {};
+  showBill(r.bill);
+  go('home');
+}
+function billText(b) {
+  const L = [`*${D.shop.name}*`];
+  if (D.shop.address) L.push('\u{1F4CD} ' + D.shop.address);
+  if (D.shop.phone || D.shop.owner) L.push('\u{1F4DE} ' + [D.shop.phone, D.shop.owner].filter(Boolean).join(' · '));
+  L.push(`Bill: ${b.bill}   Date: ${b.date}`);
+  if (b.customer) L.push('Customer: ' + b.customer);
+  L.push('------------------------');
+  b.lines.forEach(l => L.push(`${l.name} x${l.qty} = ₹${l.qty * l.price}`));
+  L.push('------------------------');
+  if (b.discount) L.push(`Discount / छूट: ₹${b.discount}`);
+  L.push(`*Total / कुल: ₹${b.net}*`);
+  if (b.advance) L.push(`Paid before / पहले जमा: ₹${b.advance}`);
+  L.push(`Paid / जमा: ₹${b.paid}`);
+  if (b.balance > 0) L.push(`*Balance / बाकी: ₹${b.balance}*`);
+  L.push('', 'Thank you! / धन्यवाद \u{1F64F}');
+  return L.join('\n');
+}
+function billImage(b) {
+  const rows = [['Bill No · बिल नं.', b.bill], ['Date · तारीख', b.date]];
+  if (b.customer) rows.push(['Customer · ग्राहक', b.customer]);
+  if (b.phone) rows.push(['Mobile · मोबाइल', b.phone]);
+  b.lines.forEach(l => rows.push([`${l.name}  × ${l.qty}  @ ${money(l.price)}`, money(l.qty * l.price)]));
+  if (b.discount) { rows.push(['Items total · सामान का कुल', money(b.total)]); rows.push(['Discount · छूट', '− ' + money(b.discount)]); }
+  const summary = [];
+  if (b.advance) summary.push(['Paid before · पहले जमा', money(b.advance)]);
+  summary.push(['Paid · जमा', money(b.paid)]);
+  summary.push(['Balance · बाकी', money(Math.max(0, b.balance)), true, b.balance > 0 ? '#b3261e' : '#1e7b45']);
+  return cardImage({ title: 'BILL · बिल', rows,
+    big: { label: 'Total · कुल', value: money(b.net), color: '#1f4e79', bg: '#eaf1f8' },
+    summary, stamp: b.balance <= 0 ? '✓ PAID · भुगतान हो गया' : '',
+    footer: 'Thank you! · धन्यवाद — ' + D.shop.owner });
+}
+function showBill(b) {
+  const img = billImage(b);
+  openModal(`${sheetHead('Bill ' + esc(b.bill))}` + shareBlock(img, billText(b), b.phone, `Bill-${b.bill}.png`, 'Bill'));
+}
+/** Picture + the ways to send it. On a computer: Copy picture, then paste in WhatsApp. On a phone: Share picture. */
+function shareBlock(img, text, phone, file, what) {
+  lastShare = { img, text, file, phone };
+  return `<img src="${img}" style="width:100%;border:1px solid var(--line);border-radius:10px" alt="${esc(what)} picture">
+    <button class="btn full green" onclick="copyPicture()">Copy picture · फ़ोटो कॉपी करें</button>
+    <a class="btn full green" target="_blank" href="${phoneLink(phone, 'Namaste! ' + what + ' from ' + D.shop.name + ' (picture below) / ' + D.shop.name + ' की रसीद')}">Open WhatsApp chat${phone ? ' with ' + esc(phone) : ''} · व्हाट्सएप खोलें</a>
+    <div class="muted" style="margin:6px 0">Copy the picture, open the chat, then paste it (Mac: ⌘+V, phone: long-press → Paste).
+      On a phone you can also long-press the picture → Share. · फ़ोटो कॉपी करें, चैट खोलें, पेस्ट करें।</div>
+    <button class="btn full alt" onclick="sharePicture()">Share picture (phone) · शेयर</button>
+    <a class="btn full alt" download="${esc(file)}" href="${img}">Download picture · डाउनलोड</a>
+    <a class="btn full alt" target="_blank" href="${phoneLink(phone, text)}">Send as text message instead · टेक्स्ट भेजें</a>
+    <button class="btn full alt" onclick="closeModal()">Done · हो गया</button>`;
+}
+async function copyPicture() {
+  const sh = lastShare;
+  try {
+    // A promise inside ClipboardItem keeps Safari happy (the copy must start inside the click).
+    await navigator.clipboard.write([new ClipboardItem({ 'image/png': fetch(sh.img).then(r => r.blob()) })]);
+    toast('Picture copied. Open the chat and paste (⌘+V) / फ़ोटो कॉपी हो गई');
+  } catch (e) {
+    toast('This browser blocked copying. Right-click the picture → Copy Image (phone: long-press → Copy).', true);
+  }
+}
+
+// ---------- Stock ----------
+function stock() {
+  const isItem = stockTab === 'Item';
+  $('app').innerHTML = `
+    <div class="tabs">
+      <button class="${isItem ? 'on' : ''}" onclick="stockTab='Item';stock()">Ready Items · तैयार माल</button>
+      <button class="${!isItem ? 'on' : ''}" onclick="stockTab='Raw';stock()">Raw Material · कच्चा माल</button>
+    </div>
+    <input id="q" placeholder="Search / खोजें" oninput="stockList()">
+    <div class="card list" id="stockList" style="margin-top:10px"></div>
+    <button class="btn full" onclick="${isItem ? 'itemForm()' : 'rawForm()'}">+ Add new ${isItem ? 'item / नया आइटम' : 'raw material / नया कच्चा माल'}</button>`;
+  stockList();
+}
+function stockList() {
+  const q = val('q').toLowerCase();
+  const isItem = stockTab === 'Item';
+  const list = (isItem ? D.items : D.raw).filter(x => JSON.stringify(x).toLowerCase().includes(q));
+  $('stockList').innerHTML = list.length ? list.map(x => `
+    <div class="it">
+      <div><div class="t">${esc(isItem ? label(x) : x.name)}</div>
+        <div class="s">${isItem ? `${esc(x.material)} ${esc(x.thickness)} · Sell ${money(x.price)} · Cost ${money(x.cost)}${x.made === 'Yes' ? ' · <span class="pill">made</span>' : ''}`
+                               : `Rate ${money(x.rate)} / ${esc(x.unit)}`}</div>
+        <div class="actions">
+          <button class="btn sm alt" onclick="${isItem ? `itemForm('${esc(x.id)}')` : `rawForm('${esc(x.id)}')`}">Edit</button>
+          <button class="btn sm alt" onclick="adjustForm('${stockTab}','${esc(x.id)}')">Correct stock / गिनती</button>
+        </div></div>
+      ${isItem && !tracked(x) ? '<div class="num muted" style="font-weight:400">not counted</div>'
+        : `<div class="num ${isLow(x) ? 'low' : 'ok'}" style="font-size:20px">${num(x.stock)}<div class="s">${isItem ? 'pcs' : esc(x.unit)}</div></div>`}
+    </div>`).join('') : '<div class="muted">Nothing found / कुछ नहीं मिला</div>';
+}
+/** Edit form: stock in hand (editable) + quick "add stock" box. */
+function stockFields(x, unit, dec) {
+  const mode = dec ? 'decimal' : 'numeric';
+  return `<div class="row"><div><label>Stock in hand · अभी स्टॉक (${esc(unit)})</label>
+      <input id="fStockNow" type="number" inputmode="${mode}" value="${num(x.stock)}" data-old="${num(x.stock)}"></div>
+    <div><label>+ Add stock · स्टॉक जोड़ें</label>
+      <input id="fStockAdd" type="number" inputmode="${mode}" placeholder="0"></div></div>
+    <div class="muted" style="margin:-4px 0 8px">Bought it? Use Purchase so the bill and vyapari dues are recorded. · खरीदा है तो Purchase से डालें।</div>`;
+}
+/** After saving an Edit form: if stock was changed or added, save the new count (logged in StockLog). */
+async function saveStockFields(kind, id) {
+  const box = $('fStockNow');
+  if (!box) return;
+  const old = Number(box.dataset.old) || 0;
+  const now = val('fStockNow') === '' ? old : Number(val('fStockNow'));
+  const add = Number(val('fStockAdd')) || 0;
+  const total = Math.round((now + add) * 1000) / 1000;
+  if (!isFinite(total) || Math.abs(total - old) < 0.0005) return;
+  if (total < 0) { toast('Stock cannot be minus / स्टॉक माइनस नहीं हो सकता', true); return; }
+  const note = add ? `Added ${add} from Edit` + (Math.abs(now - old) >= 0.0005 ? `, set ${old} → ${now}` : '') : `Set from Edit (${old} → ${now})`;
+  await save('adjustStock', { kind, id, stock: total, note });
+}
+function itemForm(id) {
+  const x = id ? itemById(id) : { type: 'Gadi', made: 'Yes' };
+  openModal(`${sheetHead(id ? 'Edit item / आइटम बदलें' : 'New item / नया आइटम')}
+    <label>Name · नाम</label><input id="fName" value="${esc(x.name)}" placeholder="Cotton Gadi">
+    <div class="row"><div><label>Type · प्रकार</label><select id="fType">${['Gadi', 'Mattress', 'Pillow', 'Quilt', 'Bedsheet', 'Other'].map(t => `<option ${x.type === t ? 'selected' : ''}>${t}</option>`).join('')}</select></div>
+      <div><label>Size · साइज़</label><input id="fSize" value="${esc(x.size)}" placeholder="Double 6x4 ft"></div></div>
+    <div class="row"><div><label>Material · मटेरियल</label><input id="fMat" value="${esc(x.material)}"></div>
+      <div><label>Thickness · मोटाई</label><input id="fThick" value="${esc(x.thickness)}" placeholder="4 inch"></div></div>
+    <div class="row"><div><label>Cost price · लागत</label><input id="fCost" type="number" inputmode="decimal" value="${esc(x.cost)}"></div>
+      <div><label>Sell price · बिक्री दाम</label><input id="fPrice" type="number" inputmode="decimal" value="${esc(x.price)}"></div></div>
+    <div class="row"><div><label>Low alert · कम स्टॉक</label><input id="fLow" type="number" inputmode="numeric" value="${esc(x.low || 2)}"></div>
+      <div><label>Made in shop? · खुद बनाते?</label><select id="fMade"><option ${x.made === 'Yes' ? 'selected' : ''}>Yes</option><option ${x.made !== 'Yes' ? 'selected' : ''}>No</option></select></div></div>
+    <label>Count stock for this item? · स्टॉक गिनें?</label>
+    <select id="fTrack"><option value="Yes" ${tracked(x) ? 'selected' : ''}>Yes – keep stock count · हाँ</option>
+      <option value="No" ${!tracked(x) ? 'selected' : ''}>No – small item, don't count · नहीं</option></select>
+    ${id ? (tracked(x) ? stockFields(x, 'pcs', false) : '') : `<label>Opening stock · शुरुआती स्टॉक</label><input id="fStock" type="number" inputmode="numeric" value="0">`}
+    <button class="btn full" onclick="saveItemForm('${esc(id || '')}')">Save · सेव करें</button>`);
+}
+async function saveItemForm(id) {
+  await save('saveItem', { id, name: val('fName'), type: val('fType'), size: val('fSize'), material: val('fMat'), thickness: val('fThick'),
+    cost: val('fCost'), price: val('fPrice'), low: val('fLow'), made: val('fMade'), track: val('fTrack'), stock: val('fStock') });
+  if (id) await saveStockFields('Item', id);
+  closeModal(); render();
+}
+function rawForm(id) {
+  const x = id ? rawById(id) : { unit: 'kg' };
+  openModal(`${sheetHead(id ? 'Edit raw material' : 'New raw material / नया कच्चा माल')}
+    <label>Name · नाम</label><input id="fName" value="${esc(x.name)}" placeholder="Cotton / रुई">
+    <div class="row"><div><label>Unit · इकाई</label><input id="fUnit" value="${esc(x.unit)}" placeholder="kg / meter"></div>
+      <div><label>Rate per unit · दाम</label><input id="fRate" type="number" inputmode="decimal" value="${esc(x.rate)}"></div></div>
+    <label>Low alert · कम स्टॉक</label><input id="fLow" type="number" inputmode="decimal" value="${esc(x.low || 0)}">
+    ${id ? stockFields(x, x.unit || '', true) : `<label>Opening stock · शुरुआती स्टॉक</label><input id="fStock" type="number" inputmode="decimal" value="0">`}
+    <button class="btn full" onclick="saveRawForm('${esc(id || '')}')">Save · सेव करें</button>`);
+}
+async function saveRawForm(id) {
+  await save('saveRaw', { id, name: val('fName'), unit: val('fUnit'), rate: val('fRate'), low: val('fLow'), stock: val('fStock') });
+  if (id) await saveStockFields('Raw', id);
+  closeModal(); render();
+}
+function adjustForm(kind, id) {
+  const x = kind === 'Item' ? itemById(id) : rawById(id);
+  openModal(`${sheetHead('Correct stock / स्टॉक सुधारें')}
+    <div class="t">${esc(kind === 'Item' ? label(x) : x.name)}</div><div class="muted">Now in app: ${num(x.stock)}</div>
+    <label>Actual count · असली गिनती</label><input id="fStock" type="number" inputmode="decimal" value="${num(x.stock)}">
+    <label>Reason · कारण</label><input id="fNote" placeholder="Opening stock / damaged / counted">
+    <button class="btn full" onclick="doAdjust('${kind}','${esc(id)}')">Save · सेव करें</button>`);
+}
+async function doAdjust(kind, id) {
+  await save('adjustStock', { kind, id, stock: val('fStock'), note: val('fNote') });
+  closeModal(); render();
+}
+
+// ---------- Make Gadi ----------
+function recipeOf(id) { return D.recipes.filter(r => String(r.itemId) === String(id) && num(r.qty) > 0); }
+let mkRows = [];   // raw material per piece for a typed (new) item
+function make() {
+  const makeable = D.items.filter(i => i.made === 'Yes' || recipeOf(i.id).length);
+  $('app').innerHTML = `
+    <div class="card">
+      <label>Item · क्या बनाया</label>
+      <select id="mItem" onchange="makeItemChanged()"><option value="">— Select / चुनें —</option>
+        <option value="__custom">✏️ Not in list – type it / लिस्ट में नहीं – लिखें</option>
+        ${opts(makeable, '', x => label(x) + stockTag(x))}</select>
+      <div id="mNew"></div>
+      <div class="row">
+        <div><label>How many · कितनी</label><input id="mQty" type="number" inputmode="numeric" value="1" oninput="makePreview()"></div>
+        <div><label>Labour per piece · मजदूरी</label><input id="mLab" type="number" inputmode="decimal" value="0" oninput="makePreview()" placeholder="same as last time"></div>
+      </div>
+      <div id="mPrev" style="margin-top:10px"></div>
+      <button class="btn full" onclick="doMake()">Save · सेव करें</button>
+    </div>
+    <div class="muted">Raw material is taken out and finished stock is added automatically. · कच्चा माल अपने आप घटेगा और तैयार माल बढ़ेगा।</div>`;
+}
+function makeItemChanged() {
+  const id = val('mItem');
+  if (id === '__custom') {
+    mkRows = D.raw.map(r => ({ rawId: String(r.id), qty: '' }));
+    $('mLab').value = 0;
+    mkDrawNew();
+  } else {
+    $('mNew').innerHTML = '';
+    $('mLab').value = (D.labour || {})[id] || 0;
+  }
+  makePreview();
+}
+function mkDrawNew() {
+  const keep = { name: val('mName'), price: val('mPrice') };
+  $('mNew').innerHTML = `<div class="row">
+        <div><label>Item name · आइटम का नाम</label><input id="mName" placeholder="e.g. Kapas Gadi 6x5 ft 12 kg"></div>
+        <div style="flex:0 0 120px"><label>Sell price · दाम</label><input id="mPrice" type="number" inputmode="decimal"></div></div>
+      <div class="muted">It will be added to your item list, and the raw material below saved as its recipe. · लिस्ट में जुड़ जाएगा।</div>
+      <h2 style="margin-top:12px">Raw material per piece · एक पीस में</h2>
+      ${mkRows.map((r, i) => `<div class="row" style="margin-top:6px">
+        <select onchange="mkRows[${i}].rawId=this.value;makePreview()"><option value="">— Raw —</option>${opts(D.raw, r.rawId, x => x.name + ' (' + x.unit + ')')}</select>
+        <input type="number" inputmode="decimal" style="max-width:100px" value="${esc(r.qty)}" oninput="mkRows[${i}].qty=this.value;makePreview()"></div>`).join('')}
+      <button class="btn sm alt" style="margin:8px 0" onclick="mkRows.push({rawId:'',qty:''});mkDrawNew()">+ Add raw / और जोड़ें</button>`;
+  $('mName').value = keep.name; $('mPrice').value = keep.price;
+}
+function makePreview() {
+  const id = val('mItem'), q = num(val('mQty'));
+  if (!id) { $('mPrev').innerHTML = ''; return; }
+  const custom = id === '__custom';
+  const parts = custom ? mkRows.filter(r => r.rawId && num(r.qty) > 0) : recipeOf(id);
+  let cost = 0;
+  const rows = parts.map(p => {
+    const r = rawById(p.rawId) || { name: p.rawName, stock: 0, unit: '', rate: 0 };
+    const need = Math.round(num(p.qty) * q * 100) / 100;
+    cost += num(p.qty) * num(r.rate);
+    const ok = num(r.stock) >= need;
+    return `<div class="it"><div><div class="t">${esc(r.name)}</div><div class="s">${num(p.qty)} ${esc(r.unit)} per piece · have ${num(r.stock)}</div></div>
+      <div class="num ${ok ? 'ok' : 'low'}">${need} ${esc(r.unit)}</div></div>`;
+  }).join('');
+  $('mPrev').innerHTML = `<h2>Raw material needed · लगने वाला माल</h2>
+    <div class="list">${rows || `<div class="muted low">${custom ? 'Enter raw material per piece above' : 'No recipe yet / रेसिपी नहीं है'}</div>`}</div>
+    ${parts.length ? `<div class="muted">Making cost per piece · प्रति पीस लागत: <b>${money(cost + num(val('mLab')))}</b></div>` : ''}
+    ${custom ? '' : `<button class="btn sm alt" style="margin-top:8px" onclick="recipeForm('${esc(id)}')">✏️ ${parts.length ? 'Edit' : 'Set'} recipe / रेसिपी</button>`}`;
+}
+/** Shown when raw material in the app is less than needed (often because opening stock isn't entered yet). */
+function rawShortModal(msg, retry) {
+  openModal(`${sheetHead('Raw material shows short · कच्चा माल कम दिख रहा है')}
+    <div>${esc(String(msg).replace(/^.*RAW_SHORT:\s*/, '')).replace(/; /g, '<br>')}</div>
+    <div class="muted" style="margin-top:6px">If the material is really in the shop, its stock is probably not entered yet.
+      You can make anyway (raw stock will show minus) and fix it later with Purchase or Stock → Correct stock.</div>
+    <button class="btn full" onclick="closeModal();${retry}">Make anyway · फिर भी बनाओ</button>
+    <button class="btn full alt" onclick="closeModal()">Go back · वापस</button>`);
+}
+async function doMake(allowShort) {
+  const custom = val('mItem') === '__custom';
+  if (custom && !val('mName')) { toast('Write the item name / आइटम का नाम लिखें', true); return; }
+  const args = custom
+    ? { name: val('mName'), price: val('mPrice'), parts: mkRows, qty: val('mQty'), labour: val('mLab'), allowShort: !!allowShort }
+    : { id: val('mItem'), qty: val('mQty'), labour: val('mLab'), allowShort: !!allowShort };
+  try { await save('makeGadi', args, true); }
+  catch (e) {
+    const m = String((e && e.message) || e);
+    if (m.indexOf('RAW_SHORT') >= 0) rawShortModal(m, 'doMake(true)'); else toast(m, true);
+    return;
+  }
+  make();
+}
+let recipeRows = [];
+function recipeForm(itemId) {
+  recipeRows = recipeOf(itemId).map(r => ({ rawId: r.rawId, qty: r.qty }));
+  if (!recipeRows.length) recipeRows = [{ rawId: '', qty: '' }];
+  drawRecipe(itemId);
+}
+function drawRecipe(itemId) {
+  const it = itemById(itemId);
+  openModal(`${sheetHead('Recipe / रेसिपी')}
+    <div class="t">${esc(label(it))}</div><div class="muted">Raw material for ONE piece · एक पीस में कितना माल</div>
+    ${recipeRows.map((r, i) => `<div class="row" style="margin-top:8px">
+      <select onchange="recipeRows[${i}].rawId=this.value"><option value="">— Raw —</option>${opts(D.raw, r.rawId, x => x.name + ' (' + x.unit + ')')}</select>
+      <input type="number" inputmode="decimal" style="max-width:110px" placeholder="Qty" value="${esc(r.qty)}" oninput="recipeRows[${i}].qty=this.value">
+      <button class="btn sm red" style="flex:0" onclick="recipeRows.splice(${i},1);drawRecipe('${esc(itemId)}')">✕</button></div>`).join('')}
+    <button class="btn sm alt" style="margin-top:8px" onclick="recipeRows.push({rawId:'',qty:''});drawRecipe('${esc(itemId)}')">+ Add raw / और जोड़ें</button>
+    <button class="btn full" onclick="doRecipe('${esc(itemId)}')">Save recipe · सेव करें</button>`);
+}
+async function doRecipe(itemId) {
+  await save('saveRecipe', { itemId, parts: recipeRows });
+  closeModal(); make(); $('mItem').value = itemId; $('mLab').value = (D.labour || {})[itemId] || 0; makePreview();
+}
+
+// ---------- Purchase ----------
+function purchase() {
+  const isRaw = purchaseKind === 'Raw';
+  $('app').innerHTML = `
+    <div class="tabs">
+      <button class="${isRaw ? 'on' : ''}" onclick="purchaseKind='Raw';purchase()">Raw Material · कच्चा माल</button>
+      <button class="${!isRaw ? 'on' : ''}" onclick="purchaseKind='Item';purchase()">Ready Item · तैयार माल</button>
+    </div>
+    <div class="card">
+      <label>What · क्या खरीदा</label>
+      <select id="pId" onchange="purFill()"><option value="">— Select / चुनें —</option>
+        ${isRaw ? opts(D.raw, '', x => x.name + ' (' + x.unit + ')') : opts(D.items, '', x => label(x))}</select>
+      <div class="row">
+        <div><label>Qty · मात्रा</label><input id="pQty" type="number" inputmode="decimal" oninput="purTotal()"></div>
+        <div><label>Rate · दाम</label><input id="pRate" type="number" inputmode="decimal" oninput="purTotal()"></div>
+      </div>
+      <div class="row">
+        <div><label>Supplier · सप्लायर</label><input id="pSup" list="supList" oninput="fillPhone('pSup','pPhone')"></div>
+        <div><label>Phone · फ़ोन</label><input id="pPhone" type="tel"></div>
+      </div>
+      ${datalist('supList', D.suppliers.map(s => s.name))}
+      <div class="row"><div><label>Paid now · अभी दिया</label><input id="pPaid" type="number" inputmode="decimal" oninput="purTotal()"></div>
+        <div style="flex:0 0 100px"><label>Mode · तरीका</label>${modeSelect('pMode')}</div></div>
+      <button class="btn alt sm" style="margin-top:8px" onclick="$('pPaid').value=num(val('pQty'))*num(val('pRate'));purTotal()">Full paid / पूरा दिया</button>
+      <div class="total"><span>Amount · रकम</span><span id="pAmt">₹0</span></div>
+      <div class="total" style="font-size:15px"><span>Due to supplier · बाकी देना</span><span id="pBal" class="low">₹0</span></div>
+      <button class="btn full" onclick="doPurchase()">Save · सेव करें</button>
+    </div>
+    <div class="card"><h2>Recent purchases · हाल की खरीद</h2><div class="list">
+      ${D.recentPurchases.map(p => `<div class="it"><div><div class="t">${esc(p.name)} x${num(p.qty)}</div><div class="s">${esc(String(p.date).slice(0, 10))} · ${esc(p.supplier)}</div></div><div class="num">${money(p.amount)}</div></div>`).join('') || '<div class="muted">None yet</div>'}
+    </div></div>`;
+}
+function purFill() {
+  const x = purchaseKind === 'Raw' ? rawById(val('pId')) : itemById(val('pId'));
+  if (x) $('pRate').value = num(purchaseKind === 'Raw' ? x.rate : x.cost);
+  purTotal();
+}
+function purTotal() {
+  const amt = num(val('pQty')) * num(val('pRate'));
+  $('pAmt').textContent = money(amt);
+  $('pBal').textContent = money(Math.max(0, amt - num(val('pPaid'))));
+}
+async function doPurchase() {
+  await save('savePurchase', { kind: purchaseKind, id: val('pId'), qty: val('pQty'), rate: val('pRate'), supplier: val('pSup'), phone: val('pPhone'), paid: val('pPaid'), mode: val('pMode') });
+  purchase();
+}
+
+// ---------- Orders ----------
+function orders() {
+  const open = D.orders.filter(o => o.status === 'Pending' || o.status === 'Ready')
+    .sort((a, b) => String(a.delivery || '9999').localeCompare(String(b.delivery || '9999')));
+  const done = D.orders.filter(o => o.status === 'Delivered' || o.status === 'Cancelled');
+  const pendingAmt = open.reduce((t, o) => t + orderLeft(o), 0);
+  $('app').innerHTML = `
+    <button class="btn full" style="margin:0 0 12px" onclick="orderForm()">+ New order / नया ऑर्डर</button>
+    <div class="stats">
+      <div class="stat"><div class="l">Open orders · चालू</div><div class="v">${open.length}</div></div>
+      <div class="stat"><div class="l">To collect on delivery · लेना है</div><div class="v warn">${money(pendingAmt)}</div></div>
+    </div>
+    <div class="card"><h2>Open orders · चालू ऑर्डर</h2><div class="list">
+      ${open.map(o => {
+        const dl = dueLabel(o.delivery);
+        return `<div class="it" style="display:block">
+          <div style="display:flex;justify-content:space-between;gap:8px"><div class="t">${esc(o.no)} · ${esc(o.customer)}</div>
+            <span class="pill ${o.status === 'Ready' && dl.cls !== 'late' ? 'Ready' : dl.cls}">${o.status === 'Ready' ? 'Ready ✓ · ' : ''}${dl.text}</span></div>
+          <div class="s">${esc(o.details)}</div>
+          <div class="s">\u{1F4C5} <b>${esc(dmy(o.delivery))}</b> · Total ${money(o.amount)} · Paid ${money(orderPaid(o))} · Baki <b class="${orderLeft(o) > 0 ? 'warn' : 'ok'}">${orderLeft(o) > 0 ? money(orderLeft(o)) : 'Fully paid ✓'}</b></div>
+          ${o.phone ? `<div class="s">\u{1F4DE} ${esc(o.phone)}</div>` : ''}
+          ${o.note ? `<div class="s">Note: ${esc(o.note)}</div>` : ''}
+          <div class="actions">
+            ${o.status === 'Pending' ? `<button class="btn sm" onclick="makeOrderForm('${esc(o.no)}')">\u{1F9F5} Make for this order</button>
+              <button class="btn sm alt" onclick="orderStatus('${esc(o.no)}','Ready')">Ready (from stock)</button>` : ''}
+            ${orderLeft(o) > 0 ? `<button class="btn sm alt" onclick="orderPayForm('${esc(o.no)}')">\u{1F4B0} Receive payment</button>` : ''}
+            <button class="btn sm" onclick="deliverForm('${esc(o.no)}')">Deliver / डिलीवर</button>
+            <button class="btn sm alt" onclick="editOrderForm('${esc(o.no)}')">\u270F\uFE0F Edit</button>
+            <button class="btn sm alt" onclick="showOrderReceipt(D.orders.find(x => x.no === '${esc(o.no)}'))">\u{1F9FE} Receipt</button>
+            ${o.phone ? `<a class="btn sm green" target="_blank" href="${phoneLink(o.phone, readyText(o))}">${o.status === 'Ready' ? 'Tell ready' : 'Remind'}</a>` : ''}
+            <button class="btn sm red" onclick="cancelForm('${esc(o.no)}')">Cancel</button>
+            <button class="btn sm red" onclick="delOrderForm('${esc(o.no)}')">Delete (wrong entry)</button>
+          </div></div>`; }).join('') || '<div class="muted">No open orders / कोई चालू ऑर्डर नहीं</div>'}
+    </div></div>
+    ${done.length ? `<div class="card"><h2>Completed · पूरे हुए</h2><div class="list">${done.map(o => `<div class="it"><div><div class="t">${esc(o.no)} · ${esc(o.customer)}</div><div class="s">${esc(o.details)}</div>
+      <button class="btn sm red" style="margin-top:4px;padding:4px 8px;font-size:12px" onclick="delOrderForm('${esc(o.no)}')">Delete (wrong entry)</button></div>
+      <span class="pill">${esc(o.status)}</span></div>`).join('')}</div></div>` : ''}`;
+}
+function readyText(o) {
+  const left = orderLeft(o);
+  const due = left > 0 ? `Baki rakam / बाकी: ₹${left}` : 'Payment: fully paid ✅ / पूरा भुगतान हो गया';
+  return o.status === 'Ready'
+    ? `Namaste ${o.customer} ji \u{1F64F}\nAapka order taiyaar hai / आपका ऑर्डर तैयार है।\n${o.details}\n${due}\nKripya le jaayein. - ${D.shop.name}, ${D.shop.address}`
+    : `Namaste ${o.customer} ji \u{1F64F}\nAapke order (${o.details}) ki delivery ${dmy(o.delivery)} ko hai.\n${due}\n- ${D.shop.name}, ${D.shop.phone}`;
+}
+let orderAmtTouched = false, orderMode = 'calc', newOrderMode = 'calc';
+// "Rui + Kapda + Labour" orders keep their breakdown in the details text, separated by " | ".
+const CALC_RUI = 'Rui/Kapas · रुई', CALC_KAP = 'Kapda · कपड़ा', CALC_LAB = 'Labour · मजदूरी';
+const isFabric = r => /fabric|kapda|cloth|कपड़ा/i.test(r.name);
+function orderParts(details) {
+  const d = String(details || ''), n = re => { const m = d.match(re); return m ? Number(m[1].replace(/,/g, '')) : 0; };
+  if (d.indexOf(' | ') < 0 || (d.indexOf(CALC_RUI) < 0 && d.indexOf(CALC_KAP) < 0 && d.indexOf(CALC_LAB) < 0)) return null;
+  const ps = d.split(' | '), head = ps[0], qm = head.match(/^(\d+) x (.*)$/);
+  const known = t => t.indexOf(CALC_RUI + ':') === 0 || t.indexOf(CALC_RUI + ' (') === 0 || t.indexOf(CALC_KAP + ':') === 0 || t.indexOf(CALC_KAP + ' (') === 0 || t.indexOf(CALC_LAB + ':') === 0;
+  const EXP = /^(.+?): ₹([\d.,]+)$/, rest = ps.slice(1).filter(t => !known(t) && !LINE_RE.test(t));
+  const its = ps.slice(1).filter(t => LINE_RE.test(t)).map(t => { const m = t.match(LINE_RE), it = D.items.find(x => label(x).toLowerCase() === m[2].toLowerCase());
+    return { id: it ? String(it.id) : '', name: m[2], qty: Number(m[1]), rate: Number(m[3].replace(/,/g, '')) }; });
+  const rt = d.match(/Rui\/Kapas · रुई \(([^)]+)\):/), kt = d.match(/Kapda · कपड़ा \(([^)]+)\):/);
+  return { ruiType: rt ? rt[1] : '', kapType: kt ? kt[1] : '', kg: n(/Rui\/Kapas[^:]*: ([\d.,]+) kg/), kgRate: n(/ kg × ₹([\d.,]+)/), m: n(/Kapda[^:]*: ([\d.,]+) m/),
+    mRate: n(/ m × ₹([\d.,]+)/), labour: n(/Labour[^:]*: ₹([\d.,]+)/),
+    exp: rest.filter(t => EXP.test(t)).map(t => { const m = t.match(EXP); return { name: m[1], amt: Number(m[2].replace(/,/g, '')) }; }),
+    items: its, qty: qm ? Number(qm[1]) : 1, what: qm ? qm[2] : head, extra: rest.filter(t => !EXP.test(t)).join(' | ') };
+}
+// Several-item orders: "2 x Pillow @ ₹200 = ₹400 | 1 x Gadi @ ₹2,200 = ₹2,200 | extra"
+const LINE_RE = /^([\d.]+) x (.+?) @ ₹([\d,.]+)/;
+function orderLinesOf(details) {
+  const ps = String(details || '').split(' | '), lines = ps.filter(t => LINE_RE.test(t));
+  if (lines.length < (orderParts(details) ? 1 : 2)) return null;
+  return { lines: lines.map(t => { const m = t.match(LINE_RE), it = D.items.find(x => label(x).toLowerCase() === m[2].toLowerCase());
+      return { id: it ? String(it.id) : '', name: m[2], qty: Number(m[1]), rate: Number(m[3].replace(/,/g, '')) }; }),
+    extra: ps.filter(t => !LINE_RE.test(t)).join(' | ') };
+}
+let oExp = [], oLines = [], oCItems = [];
+function drawOExp() {
+  $('oExpList').innerHTML = oExp.map((e, i) => `<div class="row" style="align-items:flex-end">
+      <div><label>Other expense · और खर्च</label><input value="${esc(e.name)}" placeholder="Cover silai / transport" oninput="oExp[${i}].name=this.value"></div>
+      <div style="flex:0 0 110px"><label>₹</label><input type="number" inputmode="decimal" value="${e.amt === '' ? '' : esc(e.amt)}" oninput="oExp[${i}].amt=this.value;orderAmtTouched=false;orderCalc()"></div>
+      <button class="btn sm red" style="flex:0 0 auto;margin-bottom:2px" onclick="oExp.splice(${i},1);drawOExp();orderAmtTouched=false;orderCalc()">×</button></div>`).join('');
+}
+// Item rows: oLines = "Item x Qty" order, oCItems = extra items in a Rui + Kapda order (minRows 0)
+const ROWS = { oLines: { box: 'oLines', min: 1 }, oCItems: { box: 'oCItemsBox', min: 0 } };
+function drawOLines() { drawRows('oLines'); }
+function drawRows(name) {
+  const arr = rowList(name), box = $(ROWS[name].box);
+  if (!box) return;
+  box.innerHTML = arr.map((l, i) => `<div style="border:1px solid var(--line);border-radius:10px;padding:8px;margin:6px 0;background:#fff">
+      <div class="row"><select onchange="rowPick('${name}', ${i}, this.value)"><option value="">✏️ Custom – type name · अपनी मर्ज़ी का</option>${opts(D.items, l.id, x => label(x))}</select>
+        ${arr.length > ROWS[name].min ? `<button class="btn sm red" style="flex:0 0 auto" onclick="rowList('${name}').splice(${i},1);drawRows('${name}');orderAmtTouched=false;orderCalc()">×</button>` : ''}</div>
+      ${l.id ? '' : `<input style="margin-top:6px" value="${esc(l.name)}" placeholder="Item name · क्या है" oninput="rowList('${name}')[${i}].name=this.value">`}
+      <div class="row" style="align-items:flex-end">
+        <div><label>Qty · कितने</label><input type="number" inputmode="numeric" value="${esc(l.qty)}" oninput="rowList('${name}')[${i}].qty=this.value;orderAmtTouched=false;orderCalc()"></div>
+        <div><label>Rate each · दाम</label><input type="number" inputmode="decimal" value="${l.rate === '' ? '' : esc(l.rate)}" oninput="rowList('${name}')[${i}].rate=this.value;orderAmtTouched=false;orderCalc()"></div>
+        <div style="text-align:right"><label>Amount</label><div class="t" id="${name}A${i}" style="padding:10px 0">${money(num(l.qty) * num(l.rate))}</div></div>
+      </div></div>`).join('');
+}
+const rowList = name => name === 'oLines' ? oLines : oCItems;
+function rowPick(name, i, id) {
+  const it = itemById(id), l = rowList(name)[i];
+  l.id = id; if (it) { l.name = label(it); l.rate = num(it.price); }
+  drawRows(name); orderAmtTouched = false; orderCalc();
+}
+const rowsSum = arr => arr.reduce((a, l) => a + num(l.qty) * num(l.rate), 0);
+const rowText = l => `${num(l.qty)} x ${String(l.id ? label(itemById(l.id)) : l.name).replace(/\s*\|\s*/g, ' / ').trim()} @ ₹${num(l.rate)} = ${money(num(l.qty) * num(l.rate))}`;
+/** Reads the item list; returns what saveOrder / updateOrder need, or null (with a message). */
+function stdOrderData() {
+  const lines = oLines.filter(l => num(l.qty) > 0 && (l.id || String(l.name).trim()));
+  if (!lines.length) { toast('Add an item / आइटम डालें', true); return null; }
+  if (lines.some(l => !l.id && !String(l.name).trim())) { toast('Write the item name / आइटम का नाम लिखें', true); return null; }
+  const wt = val('oWt'), extra = val('oExtra'), clean = t => String(t).replace(/\s*\|\s*/g, ' / ').trim();
+  const sum = lines.reduce((a, l) => a + num(l.qty) * num(l.rate), 0);
+  const amount = val('oAmt') === '' ? sum : num(val('oAmt'));
+  if (lines.length === 1) {   // one item: same as before
+    const l = lines[0], qty = num(l.qty) || 1, what = clean(l.id ? label(itemById(l.id)) : l.name);
+    return { itemId: l.id, what, qty, rate: num(l.rate), weight: wt, amount,
+      details: `${qty} x ${what}${wt ? `, ${wt} kg each` : ''}${extra ? `, ${clean(extra)}` : ''}` };
+  }
+  const parts = lines.map(l => `${num(l.qty)} x ${clean(l.id ? label(itemById(l.id)) : l.name)} @ ₹${num(l.rate)} = ${money(num(l.qty) * num(l.rate))}`);
+  if (wt) parts.push(`${wt} kg each`);
+  if (extra) parts.push(clean(extra));
+  return { itemId: '', what: '', qty: 1, rate: amount, weight: wt, amount, details: parts.join(' | '),
+    lines: lines.map(l => ({ itemId: l.id, name: l.id ? '' : clean(l.name), qty: num(l.qty), rate: num(l.rate) })) };
+}
+function stdBlock() {
+  return `<label>Items · आइटम</label><div id="oLines"></div>
+    <button class="btn sm alt" onclick="oLines.push({id:'',name:'',qty:1,rate:''});drawOLines()">+ Add item · और आइटम जोड़ें</button>
+    <div class="muted" style="margin-top:4px">A typed (custom) name is added to your item list with its rate, so next time you can pick it.</div>
+    <label>Weight each (kg) · वज़न (optional)</label><input id="oWt" type="number" inputmode="decimal" placeholder="10">`;
+}
+// Rui / Kapas types come from the Items tab (names with Rui / Kapas), using their sell price per kg.
+const ruiItems = () => D.items.filter(x => /(^|[^a-z])(rui|kapas)([^a-z]|$)|रुई|कपास/i.test(x.name));
+// Kapda types: items with Kapda / Regzine / Rexine in the name, using their sell price per meter.
+const kapItems = () => D.items.filter(x => /kapda|regzine|rexine|कपड़ा/i.test(x.name) && !ruiItems().includes(x));
+const typeName = x => label(x).replace(/[|:()]/g, ' ').replace(/\s+/g, ' ').trim();   // safe inside "(...)" of the details text
+function ruiPick(id) {
+  const it = itemById(id);
+  if (it && num(it.price)) $('oRuiRate').value = num(it.price);
+  orderAmtTouched = false; orderCalc();
+}
+function kapPick(id) {
+  const it = itemById(id);
+  if (it && num(it.price)) $('oKapRate').value = num(it.price);
+  orderAmtTouched = false; orderCalc();
+}
+function calcBlock(v) {
+  v = v || {};
+  const f = x => (x === undefined || x === null || x === 0 || x === '0') ? '' : esc(x);
+  return `<div id="oCalc">
+      <div class="row">
+        <div><label>What to make · क्या बनाना है</label><input id="oCWhat" value="${f(v.what)}" placeholder="Gadi / गादी"></div>
+        <div style="flex:0 0 90px"><label>Pieces · कितने</label><input id="oCQty" type="number" inputmode="numeric" value="${esc(v.qty || 1)}"></div>
+      </div>
+      ${ruiItems().length ? `<label>Rui type · रुई का प्रकार</label>
+      <select id="oRuiType" onchange="ruiPick(this.value)"><option value="">— Choose Rui · रुई चुनें —</option>${ruiItems().map(x =>
+        `<option value="${esc(x.id)}" ${v.ruiType && typeName(x).toLowerCase() === String(v.ruiType).toLowerCase() ? 'selected' : ''}>${esc(label(x))}${num(x.price) ? ' · ' + money(x.price) + '/kg' : ''}</option>`).join('')}</select>` : ''}
+      <div class="row">
+        <div><label>Rui / Kapas (kg) · रुई</label><input id="oRuiKg" type="number" inputmode="decimal" value="${f(v.kg)}" placeholder="7" oninput="orderCalc()"></div>
+        <div><label>Price per kg · ₹/kg</label><input id="oRuiRate" type="number" inputmode="decimal" value="${f(v.kgRate)}" placeholder="350" oninput="orderCalc()"></div>
+      </div>
+      <div class="muted" id="oRuiAmt" style="text-align:right;margin-top:-4px"></div>
+      ${kapItems().length ? `<label>Kapda type · कपड़े का प्रकार</label>
+      <select id="oKapType" onchange="kapPick(this.value)"><option value="">— Choose Kapda · कपड़ा चुनें —</option>${kapItems().map(x =>
+        `<option value="${esc(x.id)}" ${v.kapType && typeName(x).toLowerCase() === String(v.kapType).toLowerCase() ? 'selected' : ''}>${esc(label(x))}${num(x.price) ? ' · ' + money(x.price) + '/m' : ''}</option>`).join('')}</select>` : ''}
+      <div class="row">
+        <div><label>Kapda (meter) · कपड़ा</label><input id="oKapM" type="number" inputmode="decimal" value="${f(v.m)}" placeholder="5" oninput="orderCalc()"></div>
+        <div><label>Price per meter · ₹/m</label><input id="oKapRate" type="number" inputmode="decimal" value="${f(v.mRate)}" placeholder="90" oninput="orderCalc()"></div>
+      </div>
+      <div class="muted" id="oKapAmt" style="text-align:right;margin-top:-4px"></div>
+      <label>Labour charges · मजदूरी (₹)</label><input id="oLab" type="number" inputmode="decimal" value="${f(v.labour)}" placeholder="300" oninput="orderCalc()">
+      <div id="oExpList"></div>
+      <button class="btn sm alt" style="margin-top:8px" onclick="oExp.push({name:'',amt:''});drawOExp()">+ Add other expense · और खर्च जोड़ें</button>
+      ${v.noItems ? '' : `<div id="oCItemsBox"></div>
+      <button class="btn sm alt" style="margin-top:8px" onclick="oCItems.push({id:'',name:'',qty:1,rate:''});drawRows('oCItems')">+ Add item (pillow, cover…) · और आइटम</button>`}
+    </div>`;
+}
+function orderModeSet(m) {
+  orderMode = newOrderMode = m;
+  $('oCalc').classList.toggle('hidden', m !== 'calc');
+  $('oStd').classList.toggle('hidden', m === 'calc');
+  document.querySelectorAll('#oModeChips button').forEach(b => b.classList.toggle('on', b.dataset.m === m));
+  orderAmtTouched = false; orderCalc();
+}
+function orderForm(pre) {
+  pre = pre || {};
+  orderAmtTouched = false;
+  const lastRui = store.get('sgg_rate_rui') || '', lastKap = store.get('sgg_rate_kapda') || '';
+  oExp = []; oLines = [{ id: '', name: '', qty: 1, rate: '' }]; oCItems = [];
+  openModal(`${sheetHead('New order / नया ऑर्डर')}
+    <label>Mobile · मोबाइल</label><input id="oPhone" type="tel" inputmode="tel" value="${esc(pre.phone)}" oninput="lookupClient('oPhone','oCust','oChip','oAddr')" placeholder="10 digit">
+    <div id="oChip" style="margin-top:6px"></div>
+    <div class="row"><div><label>Name · नाम</label><input id="oCust" autocomplete="off" value="${esc(pre.name)}" placeholder="Type to search old customer" oninput="fillPhone('oCust','oPhone');custSuggest('oCust','oPhone','oChip','oAddr','oPicks')"></div>
+      <div><label>Address · पता (optional)</label><input id="oAddr" value="${esc(pre.address)}"></div></div>
+    <div id="oPicks" class="picks"></div>
+    <label>Order type · ऑर्डर का प्रकार</label>
+    <div class="chips" id="oModeChips">
+      <button data-m="calc" onclick="orderModeSet('calc')">Rui + Kapda + Labour · हिसाब</button>
+      <button data-m="std" onclick="orderModeSet('std')">Item × Qty · आइटम</button>
+    </div>
+    ${calcBlock({ kgRate: lastRui, mRate: lastKap })}
+    <div id="oStd" class="hidden">${stdBlock()}</div>
+    <label>Size / other details · साइज़ / और जानकारी</label><input id="oExtra" placeholder="6x5 ft, 5 inch, red cover">
+    <div class="row">
+      <div><label>Total · कुल</label><input id="oAmt" type="number" inputmode="decimal" oninput="orderAmtTouched=true;orderCalc()"></div>
+      <div><label>Advance · एडवांस</label><input id="oAdv" type="number" inputmode="decimal" value="0" oninput="orderCalc()"></div>
+      <div style="flex:0 0 95px"><label>Mode</label>${modeSelect('oMode')}</div>
+    </div>
+    <div class="total" style="font-size:16px"><span>Remaining at delivery · डिलीवरी पर बाकी</span><span id="oLeft" class="warn">₹0</span></div>
+    <label>Delivery date · डिलीवरी की तारीख</label><input id="oDel" type="date" value="${addDays(D.today, 7)}" min="${D.today}">
+    <div class="chips">${[3, 7, 10, 15].map(n => `<button onclick="$('oDel').value=addDays(D.today,${n})">+${n} days</button>`).join('')}</div>
+    <label>Note · नोट</label><input id="oNote">
+    <button class="btn full" onclick="doOrder()">Save & make receipt · रसीद बनाएं</button>`);
+  if (pre.phone) lookupClient('oPhone', 'oCust', 'oChip', 'oAddr');
+  drawOLines(); drawOExp(); drawRows('oCItems');
+  orderModeSet(newOrderMode);
+}
+function orderCalcAmounts() {
+  const rui = num(val('oRuiKg')) * num(val('oRuiRate')), kap = num(val('oKapM')) * num(val('oKapRate')), lab = num(val('oLab'));
+  const exp = oExp.reduce((a, e) => a + num(e.amt), 0), items = $('oCItemsBox') ? rowsSum(oCItems) : 0;
+  return { rui: Math.round(rui * 100) / 100, kap: Math.round(kap * 100) / 100, lab, exp, items,
+    total: Math.round((rui + kap + lab + exp + items) * 100) / 100 };
+}
+function orderCalc() {
+  if (orderMode === 'calc' && $('oCalc')) {
+    const a = orderCalcAmounts();
+    $('oRuiAmt').textContent = a.rui ? '= ' + money(a.rui) : '';
+    $('oKapAmt').textContent = a.kap ? '= ' + money(a.kap) : '';
+    oCItems.forEach((l, i) => { if ($('oCItemsA' + i)) $('oCItemsA' + i).textContent = money(num(l.qty) * num(l.rate)); });
+    if (!orderAmtTouched) $('oAmt').value = a.total || '';
+  } else if ($('oLines')) {
+    oLines.forEach((l, i) => { if ($('oLinesA' + i)) $('oLinesA' + i).textContent = money(num(l.qty) * num(l.rate)); });
+    if (!orderAmtTouched) { const t = oLines.reduce((a, l) => a + num(l.qty) * num(l.rate), 0); $('oAmt').value = t || ''; }
+  }
+  $('oLeft').textContent = money(Math.max(0, num(val('oAmt')) - num(val('oAdv'))));
+}
+async function doOrder() {
+  if (orderMode === 'calc') return doCalcOrder();
+  const c = stdOrderData();
+  if (!c) return;
+  const r = await save('saveOrder', Object.assign(c, { customer: val('oCust'), phone: val('oPhone'), address: val('oAddr'),
+    advance: val('oAdv'), mode: val('oMode'), delivery: val('oDel'), note: val('oNote') }));
+  render();
+  const o = D.orders.find(x => x.no === r.orderNo);
+  if (o) showOrderReceipt(o); else closeModal();
+}
+/** Reads the Rui + Kapda + Labour fields; returns what saveOrder / updateOrder need, or null (with a message). */
+function calcOrderData() {
+  const kg = num(val('oRuiKg')), kgRate = num(val('oRuiRate')), m = num(val('oKapM')), mRate = num(val('oKapRate'));
+  const a = orderCalcAmounts(), qty = Math.max(1, Math.round(num(val('oCQty'))) || 1), extra = val('oExtra');
+  if (!kg && !m && !a.lab && !a.exp) { toast('Enter Rui kg, Kapda meter or Labour / रुई, कपड़ा या मजदूरी लिखें', true); return null; }
+  if (!kg && !m && !a.lab) { toast('Enter Rui, Kapda or Labour too / रुई, कपड़ा या मजदूरी भी लिखें', true); return null; }
+  const what = val('oCWhat') || 'Gadi / गादी';
+  const parts = [(qty > 1 ? qty + ' x ' : '') + what];
+  const rType = $('oRuiType') && val('oRuiType') ? typeName(itemById(val('oRuiType'))) : '';
+  const kType = $('oKapType') && val('oKapType') ? typeName(itemById(val('oKapType'))) : '';
+  if (kg) parts.push(`${CALC_RUI}${rType ? ` (${rType})` : ''}: ${kg} kg × ₹${kgRate} = ${money(a.rui)}`);
+  if (m) parts.push(`${CALC_KAP}${kType ? ` (${kType})` : ''}: ${m} m × ₹${mRate} = ${money(a.kap)}`);
+  if (a.lab) parts.push(`${CALC_LAB}: ${money(a.lab)}`);
+  const its = $('oCItemsBox') ? oCItems.filter(l => num(l.qty) > 0 && (l.id || String(l.name).trim())) : [];
+  its.forEach(l => parts.push(rowText(l)));
+  oExp.filter(e => num(e.amt) > 0).forEach(e => parts.push(`${String(e.name || 'Other expense / और खर्च').replace(/\s*[|:]\s*/g, ' - ').trim()}: ${money(num(e.amt))}`));
+  if (extra) parts.push(extra.replace(/\s*\|\s*/g, ' / '));
+  if (kgRate) store.set('sgg_rate_rui', String(kgRate));
+  if (mRate) store.set('sgg_rate_kapda', String(mRate));
+  const amount = val('oAmt') === '' ? a.total : num(val('oAmt'));
+  // weight is per piece (used by "Make for this order")
+  return { qty, rate: Math.round(amount / qty * 100) / 100, weight: kg ? String(Math.round(kg / qty * 1000) / 1000) : '',
+    details: parts.join(' | '), amount,
+    lines: its.map(l => ({ itemId: l.id, name: l.id ? '' : String(l.name).trim(), qty: num(l.qty), rate: num(l.rate) })) };
+}
+async function doCalcOrder() {
+  const c = calcOrderData();
+  if (!c) return;
+  // what: '' keeps these one-off orders out of the item list
+  const r = await save('saveOrder', Object.assign(c, { customer: val('oCust'), phone: val('oPhone'), address: val('oAddr'), itemId: '', what: '',
+    advance: val('oAdv'), mode: val('oMode'), delivery: val('oDel'), note: val('oNote') }));
+  render();
+  const o = D.orders.find(x => x.no === r.orderNo);
+  if (o) showOrderReceipt(o); else closeModal();
+}
+function editOrderForm(no) {
+  const o = D.orders.find(x => String(x.no) === String(no));
+  if (!o) return;
+  const op = orderParts(o.details), ml = op ? null : orderLinesOf(o.details);
+  orderMode = op ? 'calc' : 'std';
+  oExp = op ? op.exp.map(e => ({ name: e.name, amt: e.amt })) : [];
+  oCItems = op ? op.items : [];
+  oLines = ml ? ml.lines : [];
+  orderAmtTouched = true;   // keep the saved total until a calculator number is changed
+  openModal(`${sheetHead('Edit order / ऑर्डर बदलें · ' + esc(o.no))}
+    <div class="row"><div><label>Name · नाम</label><input id="oCust" value="${esc(o.customer)}"></div>
+      <div><label>Mobile · मोबाइल</label><input id="oPhone" type="tel" inputmode="tel" value="${esc(o.phone)}"></div></div>
+    ${op ? calcBlock(op) + `<label>Size / other details · साइज़ / और जानकारी</label><input id="oExtra" value="${esc(op.extra)}">`
+      : ml ? stdBlock() + `<label>Size / other details · साइज़ / और जानकारी</label><input id="oExtra" value="${esc(ml.extra.replace(/(^| \| )[\d.]+ kg each/, '').replace(/^ \| /, ''))}">`
+      : `<label>Order details · ऑर्डर का विवरण</label><textarea id="oDetails" rows="3">${esc(o.details)}</textarea>`}
+    <div class="row">
+      <div><label>Total · कुल</label><input id="oAmt" type="number" inputmode="decimal" value="${num(o.amount)}" oninput="orderAmtTouched=true;orderCalc()"></div>
+      <div><label>Advance · एडवांस</label><input id="oAdv" type="number" inputmode="decimal" value="${num(o.advance)}" oninput="orderCalc()"></div>
+      <div style="flex:0 0 95px"><label>Mode</label>${modeSelect('oMode')}</div>
+    </div>
+    <div class="muted">Paid after the order: ${money(orderPaid(o) - num(o.advance))} (not changed here)</div>
+    <div class="total" style="font-size:16px"><span>Remaining at delivery · बाकी</span><span id="oLeft" class="warn">₹0</span></div>
+    <label>Delivery date · डिलीवरी की तारीख</label><input id="oDel" type="date" value="${esc(String(o.delivery).slice(0, 10))}">
+    <div class="chips">${[3, 7, 10, 15].map(n => `<button onclick="$('oDel').value=addDays(D.today,${n})">+${n} days</button>`).join('')}</div>
+    <label>Note · नोट</label><input id="oNote" value="${esc(o.note)}">
+    <button class="btn full" onclick="doEditOrder('${esc(o.no)}')">Save changes · बदलाव सेव करें</button>`);
+  if ($('oMode')) $('oMode').value = o.mode || 'Cash';
+  if (op) { drawOExp(); drawRows('oCItems'); }
+  if (ml) { drawOLines(); if (num(o.weight)) $('oWt').value = o.weight; }
+  if (op) ['oRuiKg', 'oRuiRate', 'oKapM', 'oKapRate', 'oLab'].forEach(id => $(id).addEventListener('input', () => { orderAmtTouched = false; orderCalc(); }));
+  orderCalc();
+  const later = orderPaid(o) - num(o.advance);
+  $('oLeft').textContent = money(Math.max(0, num(val('oAmt')) - num(val('oAdv')) - later));
+  ['oAmt', 'oAdv', 'oRuiKg', 'oRuiRate', 'oKapM', 'oKapRate', 'oLab'].forEach(id => $(id) && $(id).addEventListener('input',
+    () => { $('oLeft').textContent = money(Math.max(0, num(val('oAmt')) - num(val('oAdv')) - later)); }));
+}
+async function doEditOrder(no) {
+  const o = D.orders.find(x => String(x.no) === String(no));
+  let arg = { no, customer: val('oCust'), phone: val('oPhone'), advance: val('oAdv'), mode: val('oMode'),
+    delivery: val('oDel'), note: val('oNote') };
+  if (orderMode === 'calc') {
+    const c = calcOrderData();
+    if (!c) return;
+    arg = Object.assign(arg, c);
+  } else if ($('oLines')) {
+    const c = stdOrderData();
+    if (!c) return;
+    arg = Object.assign(arg, c);
+  } else {
+    arg.details = val('oDetails'); arg.amount = val('oAmt');
+    if (num(o.qty) > 0 && val('oAmt') !== '') arg.rate = Math.round(num(val('oAmt')) / (num(o.qty) || 1) * 100) / 100;
+  }
+  if (!arg.delivery) { toast('Choose delivery date / डिलीवरी की तारीख चुनें', true); return; }
+  await save('updateOrder', arg);
+  render();
+  const u = D.orders.find(x => String(x.no) === String(no));
+  if (u) showOrderReceipt(u); else closeModal();
+}
+function orderPayForm(no) {
+  const o = D.orders.find(x => String(x.no) === String(no));
+  const left = orderLeft(o);
+  openModal(`${sheetHead('Receive payment / पैसे मिले · ' + esc(o.no))}
+    <div class="t">${esc(o.customer)}</div><div class="muted">${esc(o.details)}</div>
+    <div class="card" style="margin-top:10px">
+      <div class="sumrow"><span>Total · कुल</span><span>${money(o.amount)}</span></div>
+      <div class="sumrow"><span>Paid so far · अब तक जमा</span><span class="ok">${money(orderPaid(o))}</span></div>
+      <div class="sumrow big"><span>Remaining · बाकी</span><span class="warn">${money(left)}</span></div>
+    </div>
+    <label>Amount received · रकम</label><input id="qAmt" type="number" inputmode="decimal">
+    <button class="btn alt sm" style="margin-top:8px" onclick="$('qAmt').value=${left}">Full clear / पूरा बाकी (${money(left)})</button>
+    <div class="row"><div><label>Mode · तरीका</label>${modeSelect('qMode')}</div>
+      <div><label>UPI / Cheque No</label><input id="qRef" placeholder="optional"></div></div>
+    <label>Note · नोट</label><input id="qNote">
+    <button class="btn full" onclick="doOrderPay('${esc(o.no)}')">Save & send receipt · रसीद बनाएं</button>`);
+}
+async function doOrderPay(no) {
+  const r = await save('saveOrderPayment', { no, amount: val('qAmt'), mode: val('qMode'), ref: val('qRef'), note: val('qNote') });
+  render();
+  const o = D.orders.find(x => x.no === r.orderNo);
+  if (o) showOrderReceipt(o, r.received); else closeModal();
+}
+// --- Make for this order: uses raw material, records cost, marks Ready
+let moRows = [], moItem = '';
+const isCotton = r => /cotton|kapas|रुई|कपास/i.test(r.name);
+function makeOrderForm(no) { moStart(no, (D.orders.find(x => x.no === no) || {}).itemId || ''); }
+function moStart(no, itemId) {
+  const o = D.orders.find(x => x.no === no);
+  moItem = itemId;
+  // Stock item: start from its recipe. Custom: list every raw material so only the amounts need typing.
+  moRows = itemId ? recipeOf(itemId).map(r => ({ rawId: String(r.rawId), qty: num(r.qty) }))
+    : D.raw.map(r => ({ rawId: String(r.id), qty: '' }));
+  const wt = num(o.weight), cot = D.raw.find(isCotton);
+  if (wt > 0 && cot) {   // order says "10 kg each": use that much cotton per piece
+    const row = moRows.find(r => r.rawId === String(cot.id));
+    if (row) row.qty = wt; else moRows.unshift({ rawId: String(cot.id), qty: wt });
+  }
+  const op = orderParts(o.details), pcs = Math.max(1, num(o.qty)), fab = D.raw.find(isFabric);
+  if (op && op.m > 0 && fab) {   // Rui + Kapda order: fabric per piece
+    const per = Math.round(op.m / pcs * 1000) / 1000, row = moRows.find(r => r.rawId === String(fab.id));
+    if (row) row.qty = per; else moRows.push({ rawId: String(fab.id), qty: per });
+  }
+  if (!moRows.length) moRows = [{ rawId: '', qty: '' }];
+  moDraw(no, itemId ? ((D.labour || {})[itemId] || 0) : (op && op.labour ? Math.round(op.labour / pcs * 100) / 100 : 0));
+}
+function moDraw(no, labour) {
+  const o = D.orders.find(x => x.no === no), q = num(o.qty) || 1;
+  openModal(`${sheetHead('\u{1F9F5} Make for ' + esc(o.no))}
+    <div class="t">${esc(o.customer)}</div><div class="muted">${esc(o.details)}</div>
+    <label>Add to stock as · किस आइटम में</label>
+    <select onchange="moStart('${esc(no)}', this.value)"><option value="">— Custom, not a stock item —</option>${opts(D.items, moItem, x => label(x))}</select>
+    <h2 style="margin-top:14px">Raw material per piece · एक पीस में (× ${q})</h2>
+    ${moRows.map((r, i) => `<div class="row" style="margin-top:6px">
+      <select onchange="moRows[${i}].rawId=this.value;moCalc('${esc(no)}')"><option value="">— Raw —</option>${opts(D.raw, r.rawId, x => x.name + ' (' + x.unit + ')')}</select>
+      <input type="number" inputmode="decimal" style="max-width:100px" value="${esc(r.qty)}" oninput="moRows[${i}].qty=this.value;moCalc('${esc(no)}')">
+      <button class="btn sm red" style="flex:0" onclick="moRows.splice(${i},1);moDraw('${esc(no)}', val('moLab'))">✕</button></div>`).join('')}
+    <button class="btn sm alt" style="margin-top:8px" onclick="moRows.push({rawId:'',qty:''});moDraw('${esc(no)}', val('moLab'))">+ Add raw / और जोड़ें</button>
+    <label>Labour per piece · मजदूरी</label><input id="moLab" type="number" inputmode="decimal" value="${esc(labour)}" oninput="moCalc('${esc(no)}')">
+    <div id="moSum" style="margin-top:10px"></div>
+    <button class="btn full" onclick="doMakeOrder('${esc(no)}')">Use material & mark Ready · बनाओ और तैयार करो</button>`);
+  moCalc(no);
+}
+function moCalc(no) {
+  const o = D.orders.find(x => x.no === no), q = num(o.qty) || 1;
+  let cost = 0, ok = true;
+  const lines = moRows.filter(r => r.rawId && num(r.qty) > 0).map(r => {
+    const rm = rawById(r.rawId) || {}; const need = Math.round(num(r.qty) * q * 100) / 100;
+    cost += num(r.qty) * num(rm.rate); const enough = num(rm.stock) >= need; if (!enough) ok = false;
+    return `<div class="it"><div><div class="t">${esc(rm.name)}</div><div class="s">have ${num(rm.stock)} ${esc(rm.unit)}</div></div><div class="num ${enough ? 'ok' : 'low'}">${need} ${esc(rm.unit)}</div></div>`;
+  });
+  const per = cost + num(val('moLab'));
+  $('moSum').innerHTML = `<div class="card list">${lines.join('') || '<div class="muted">Add raw material / कच्चा माल डालें</div>'}</div>
+    ${ok ? '' : '<div class="low">Not enough raw material / कच्चा माल कम है</div>'}
+    <div class="sumrow"><span>Cost per piece · प्रति पीस लागत</span><b>${money(per)}</b></div>
+    <div class="sumrow"><span>Total making cost (×${q}) · कुल लागत</span><b>${money(per * q)}</b></div>
+    <div class="sumrow"><span>Expected profit · अनुमानित मुनाफ़ा</span><b class="${num(o.amount) - per * q >= 0 ? 'ok' : 'low'}">${money(num(o.amount) - per * q)}</b></div>`;
+}
+async function doMakeOrder(no, allowShort) {
+  try { await save('makeForOrder', { no, itemId: moItem, parts: moRows, labour: val('moLab'), allowShort: !!allowShort }, true); }
+  catch (e) {
+    const m = String((e && e.message) || e);
+    if (m.indexOf('RAW_SHORT') >= 0) rawShortModal(m, `moDraw('${no}', ${num(val('moLab'))});doMakeOrder('${no}', true)`); else toast(m, true);
+    return;
+  }
+  render();
+  const o = D.orders.find(x => x.no === no);
+  openModal(`${sheetHead('✓ Order ready · ऑर्डर तैयार')}
+    <div class="t">${esc(o.no)} · ${esc(o.customer)}</div><div class="muted">${esc(o.details)}</div>
+    <div class="muted" style="margin-top:6px">Raw material used and stock updated. · कच्चा माल घट गया।</div>
+    ${o.phone ? `<a class="btn full green" target="_blank" href="${phoneLink(o.phone, readyText(o))}">Tell customer on WhatsApp / ग्राहक को बताएं</a>` : ''}
+    <button class="btn full alt" onclick="closeModal()">Done / हो गया</button>`);
+}
+// --- Cancel with refund
+function cancelForm(no) {
+  const o = D.orders.find(x => x.no === no), paid = orderPaid(o);
+  if (paid <= 0) { if (confirm('Cancel this order? / ऑर्डर रद्द करें?')) orderStatus(no, 'Cancelled', 0); return; }
+  openModal(`${sheetHead('Cancel ' + esc(o.no) + ' / ऑर्डर रद्द')}
+    <div class="t">${esc(o.customer)}</div><div class="muted">${esc(o.details)}</div>
+    <div class="total" style="font-size:16px"><span>Customer has paid · ग्राहक ने दिए</span><span>${money(paid)}</span></div>
+    <label>Refund to customer · वापस करें</label><input id="rfAmt" type="number" inputmode="decimal" value="${paid}">
+    <div class="chips"><button onclick="$('rfAmt').value=${paid}">Full refund / पूरा वापस</button><button onclick="$('rfAmt').value=0">Keep advance / वापस नहीं</button></div>
+    <label>Mode · तरीका</label>${modeSelect('rfMode')}
+    <div class="muted" style="margin-top:6px">Refund goes out of galla/bank in Bahi Khata. Any amount kept counts as income.</div>
+    <button class="btn full red" onclick="orderStatus('${esc(no)}','Cancelled', val('rfAmt'), val('rfMode'))">Cancel order · रद्द करें</button>`);
+}
+// --- Delete wrong entries
+function delOrderForm(no) {
+  const o = D.orders.find(x => x.no === no) || (CP && CP.orders.find(x => x.no === no));
+  const paid = orderPaid(o);
+  openModal(`${sheetHead('Delete order ' + esc(no) + '? · ऑर्डर हटाएं?')}
+    <div class="t">${esc(o.customer)}</div><div class="muted">${esc(o.details)}</div>
+    <div class="card" style="margin-top:10px">
+      <div>Use this only for an order entered <b>by mistake</b>. It will be removed from everywhere:</div>
+      <ul style="margin:6px 0 0;padding-left:18px">
+        <li>Orders list, home screen reminders, customer's history and reports</li>
+        ${paid > 0 ? `<li>Its advance/payments (${money(paid)}) are removed from the Bahi Khata</li>` : ''}
+        ${o.status === 'Delivered' ? '<li>Its delivery bill is deleted and the items go back to stock</li>' : ''}
+        ${num(o.madeCost) > 0 ? '<li>Raw material already used for making stays used (the gadis were really made)</li>' : ''}
+      </ul>
+      <div class="muted" style="margin-top:6px">If the customer really cancelled, use <b>Cancel</b> instead (that keeps the record and handles refunds).
+        A copy of the deleted entry is kept in the "Deleted" tab of the sheet.</div>
+    </div>
+    <button class="btn full red" onclick="doDelOrder('${esc(no)}')">Delete order · हटाएं</button>
+    <button class="btn full alt" onclick="closeModal()">Keep it · रहने दें</button>`);
+}
+async function doDelOrder(no) { await save('deleteOrder', { no }); closeModal(); render(); }
+function saleFind(bill) { return D.recentSales.find(x => x.bill === bill) || (CP && CP.sales.find(x => x.bill === bill)); }
+/** Rebuilds the bill (for its picture) from the saved sale row. */
+function saleBill(sl) {
+  const lines = [];
+  String(sl.items || '').split(/;\s*/).forEach(part => {
+    const m = part.match(/^(.*) x([\d.]+) @([\d.]+)$/);
+    if (m) lines.push({ name: m[1], qty: num(m[2]), price: num(m[3]) });
+  });
+  if (!lines.length || sl.ref) lines.splice(0, lines.length, { name: sl.items, qty: 1, price: num(sl.net) });
+  return { bill: sl.bill, date: dmy(sl.date), customer: sl.customer, phone: sl.phone, lines, total: num(sl.total),
+    discount: num(sl.discount), net: num(sl.net), paid: num(sl.paid), balance: num(sl.balance) };
+}
+function saleView(bill) {
+  const sl = saleFind(bill); if (!sl) return;
+  const b = saleBill(sl);
+  openModal(`${sheetHead('Bill ' + esc(bill))}` + shareBlock(billImage(b), billText(b), b.phone, `Bill-${bill}.png`, 'Bill') +
+    (sl.ref ? `<div class="muted" style="margin-top:8px">This bill is for order ${esc(sl.ref)}. To remove it, delete the order in Orders.</div>`
+      : `<button class="btn full red" onclick="delSaleForm('${esc(bill)}')">Delete this bill (wrong entry) · बिल हटाएं</button>`));
+}
+function delSaleForm(bill) {
+  const sl = saleFind(bill);
+  openModal(`${sheetHead('Delete bill ' + esc(bill) + '? · बिल हटाएं?')}
+    <div class="t">${esc(sl.customer || 'Cash customer')} · ${money(sl.net)}</div><div class="muted">${esc(sl.items)}</div>
+    <div class="card" style="margin-top:10px">
+      <div>Use this only for a bill entered <b>by mistake</b>. It will be removed from sales, Bahi Khata, reports and the customer's udhaar,
+        and the items go <b>back to stock</b>.</div>
+      <div class="muted" style="margin-top:6px">A copy is kept in the "Deleted" tab of the sheet.</div>
+    </div>
+    <button class="btn full red" onclick="doDelSale('${esc(bill)}')">Delete bill · हटाएं</button>
+    <button class="btn full alt" onclick="closeModal()">Keep it · रहने दें</button>`);
+}
+async function doDelSale(bill) { await save('deleteSale', { bill }); closeModal(); render(); }
+async function orderStatus(no, status, refund, mode) { await save('setOrderStatus', { no, status, refund, mode }); closeModal(); orders(); }
+function deliverForm(no) {
+  const o = D.orders.find(x => String(x.no) === String(no));
+  const left = orderLeft(o), ml = orderLinesOf(o.details);
+  const pre = (id, q) => { const it = itemById(id); return it && (!tracked(it) || num(it.stock) >= (num(q) || 1)) ? id : ''; };
+  const one = (i, sel, q) => `<div class="row"><select id="dItem${i}"><option value="">— None (made separately) —</option>${opts(D.items, sel, x => label(x) + stockTag(x))}</select>
+      <input id="dQty${i}" type="number" inputmode="numeric" style="max-width:80px" value="${q}"></div>`;
+  openModal(`${sheetHead('Deliver ' + esc(o.no))}
+    <div class="t">${esc(o.customer)}</div><div class="muted">${esc(o.details)}</div>
+    <div class="total" style="font-size:15px"><span>Remaining · बाकी</span><span>${money(left)}</span></div>
+    <div class="row"><div><label>Paid now · अभी जमा</label><input id="dPaid" type="number" inputmode="decimal" value="${left}"></div>
+      <div style="flex:0 0 100px"><label>Mode</label>${modeSelect('dMode')}</div></div>
+    <label>Take from stock (optional) · स्टॉक से घटाएं</label>
+    ${ml ? ml.lines.map((l, i) => one(i, pre(l.id, l.qty), l.qty)).join('') : one(0, pre(o.itemId, o.qty), num(o.qty) || 1)}
+    <div class="muted">${ml ? 'Items that are in stock are pre-selected. Choose None for anything made specially for this order.'
+      : num(o.madeCost) > 0 && !o.itemId ? `Made for this order (cost ${money(o.madeCost)} already recorded), so leave this as None.`
+      : 'If these gadis are in stock (made with "Make Gadi" or "Make for this order"), choose the item so stock and profit stay correct.'}</div>
+    <button class="btn full" onclick="doDeliver('${esc(o.no)}')">Deliver & make bill · बिल बनाएं</button>`);
+}
+async function doDeliver(no) {
+  const arg = { no, paidNow: val('dPaid'), mode: val('dMode'), lines: [] };
+  for (let i = 0; $('dItem' + i); i++) if (val('dItem' + i)) arg.lines.push({ itemId: val('dItem' + i), qty: val('dQty' + i) });
+  const r = await save('deliverOrder', arg);
+  orders(); showBill(r.bill);
+}
+function orderReceiptText(o, rcv) {
+  const left = orderLeft(o), later = Math.round((orderPaid(o) - num(o.advance)) * 100) / 100;
+  const L = [`*${D.shop.name}*`, `\u{1F4CD} ${D.shop.address} · \u{1F4DE} ${D.shop.phone}`, '', `*ORDER RECEIPT / ऑर्डर रसीद*`,
+    `Order No: ${o.no}   Date: ${dmy(o.date)}`, `Customer: ${o.customer}${o.phone ? ' (' + o.phone + ')' : ''}`, '------------------------',
+    ...String(o.details).split(' | ')];
+  if (num(o.qty) > 1 && num(o.rate) && !orderParts(o.details) && !orderLinesOf(o.details)) L.push(`Rate: ₹${num(o.rate)} each`);
+  L.push('------------------------', `Total / कुल: ₹${num(o.amount)}`, `Advance paid / एडवांस: ₹${num(o.advance)} (${o.mode || 'Cash'})`);
+  if (later > 0) L.push(`Paid later / बाद में जमा: ₹${later}`);
+  if (rcv) L.push(`✅ *Received today / आज मिले: ₹${rcv.amount}* (${rcv.mode}${rcv.ref ? ', Ref ' + rcv.ref : ''})`);
+  L.push(left > 0 ? `*Remaining / बाकी: ₹${left}* (at delivery)` : '✅ *Fully paid / पूरा भुगतान हो गया*', '', `\u{1F4C5} *Delivery date / डिलीवरी: ${dmy(o.delivery)}*`);
+  if (o.note) L.push('Note: ' + o.note);
+  L.push('', 'Thank you! / शुक्रिया \u{1F64F}', `- ${D.shop.owner}`);
+  return L.join('\n');
+}
+function orderReceiptImage(o, rcv) {
+  const left = orderLeft(o), later = Math.round((orderPaid(o) - num(o.advance)) * 100) / 100;
+  const rows = [['Order No · ऑर्डर नं.', o.no], ['Order date · तारीख', dmy(o.date)], ['Customer · ग्राहक', o.customer]];
+  if (o.phone) rows.push(['Mobile · मोबाइल', o.phone]);
+  if (orderParts(o.details)) {
+    const ps = String(o.details).split(' | ');
+    rows.push(['Order · ऑर्डर', ps[0]]);
+    ps.slice(1).forEach(t => { const m = t.match(LINE_RE), i = t.indexOf(': ');
+      rows.push(m ? [m[1] + ' x ' + m[2], money(Number(m[1]) * Number(m[3].replace(/,/g, '')))] : i > 0 ? [t.slice(0, i), t.slice(i + 2)] : ['Details · विवरण', t]); });
+  } else if (orderLinesOf(o.details)) {
+    String(o.details).split(' | ').forEach((t, i) => {
+      const m = t.match(LINE_RE);
+      rows.push(m ? [m[1] + ' x ' + m[2], money(Number(m[1]) * Number(m[3].replace(/,/g, '')))] : [i ? 'Details · विवरण' : 'Order · ऑर्डर', t]);
+    });
+  } else {
+    rows.push(['Order · ऑर्डर', o.details]);
+    if (num(o.qty) > 1 && num(o.rate)) rows.push(['Rate each · दाम', money(o.rate)]);
+  }
+  return cardImage({
+    title: 'ORDER RECEIPT · ऑर्डर रसीद', rows,
+    big: { label: 'Delivery date · डिलीवरी की तारीख', value: dmy(o.delivery), color: '#1f4e79', bg: '#eaf1f8' },
+    summary: [['Total · कुल रकम', money(o.amount)], ['Advance paid · एडवांस (' + (o.mode || 'Cash') + ')', '− ' + money(o.advance)]]
+      .concat(later > 0 ? [['Paid later · बाद में जमा' + (rcv ? ' (today ' + money(rcv.amount) + ')' : ''), '− ' + money(later)]] : [])
+      .concat([['Remaining at delivery · बाकी', money(left), true, left > 0 ? '#b3261e' : '#1e7b45']]),
+    stamp: left <= 0 ? '✓ FULLY PAID · पूरा भुगतान' : '',
+    footer: 'Thank you! · शुक्रिया — ' + D.shop.owner
+  });
+}
+let lastShare = null;
+function showOrderReceipt(o, rcv) {
+  openModal(`${sheetHead('Order receipt / ऑर्डर रसीद')}` +
+    shareBlock(orderReceiptImage(o, rcv), orderReceiptText(o, rcv), o.phone, `Order-${o.no}.png`, 'Order receipt'));
+}
+
+// ---------- Customers (grahak) ----------
+let custTab = 'all', CP = null;
+function khata() {
+  const udh = D.clients.filter(c => c.udhaar > 0.5);
+  $('app').innerHTML = `
+    <div class="stats">
+      <div class="stat"><div class="l">Customers · ग्राहक</div><div class="v">${D.clients.length}</div></div>
+      <div class="stat" onclick="custTab='udhaar';khata()"><div class="l">Udhaar to take · लेना है</div><div class="v warn">${money(D.dash.toTake)}</div></div>
+    </div>
+    <div class="tabs">
+      <button class="${custTab === 'all' ? 'on' : ''}" onclick="custTab='all';khata()">All · सभी</button>
+      <button class="${custTab === 'udhaar' ? 'on' : ''}" onclick="custTab='udhaar';khata()">Udhaar · उधार (${udh.length})</button>
+    </div>
+    <div class="row" style="margin-bottom:10px">
+      <input id="cq" placeholder="Name or mobile / नाम या मोबाइल" oninput="custList()">
+      <button class="btn sm" style="flex:0 0 auto" onclick="custForm()">+ Add</button>
+    </div>
+    <div class="card list" id="custList"></div>
+    <button class="btn full alt" onclick="paymentForm('Customer','')">+ Udhaar received / उधार के पैसे मिले</button>`;
+  custList();
+}
+function custList() {
+  const q = val('cq').toLowerCase();
+  const list = D.clients.filter(c => (custTab === 'all' || c.udhaar > 0.5) && (c.name + ' ' + c.phone + ' ' + c.address).toLowerCase().includes(q));
+  $('custList').innerHTML = list.map(c => `
+    <div class="it" onclick="custView('${esc(c.id)}')">
+      <div><div class="t">${esc(c.name)} ${c.open ? `<span class="pill soon">${c.open} open order</span>` : ''}</div>
+        <div class="s">${[c.phone, c.address].filter(Boolean).map(esc).join(' · ')}</div>
+        <div class="s">${c.orders} orders · ${money(c.business)} business · last ${esc(dmy(c.last))}</div></div>
+      <div class="num ${c.udhaar > 0.5 ? 'warn' : 'ok'}">${c.udhaar > 0.5 ? money(c.udhaar) + '<div class="s">udhaar</div>' : ''}</div>
+    </div>`).join('') || '<div class="muted">No customers found / कोई ग्राहक नहीं</div>';
+}
+function custForm(id) {
+  const c = id ? D.clients.find(x => x.id === id) : {};
+  openModal(`${sheetHead(id ? 'Edit customer / बदलें' : 'New customer / नया ग्राहक')}
+    <label>Name · नाम</label><input id="kName" value="${esc(c.name)}" ${id ? 'readonly' : ''}>
+    <label>Mobile · मोबाइल</label><input id="kPhone" type="tel" value="${esc(c.phone)}">
+    <label>Address · पता</label><input id="kAddr" value="${esc(c.address)}">
+    <label>Old udhaar (before app) · पुराना उधार</label><input id="kOpen" type="number" inputmode="decimal" value="${esc(c.opening || 0)}">
+    <label>Note · नोट</label><input id="kNote" value="${esc(c.note)}" placeholder="e.g. likes soft gadi, regular customer">
+    <button class="btn full" onclick="doCust('${esc(id || '')}')">Save · सेव करें</button>`);
+}
+async function doCust(id) {
+  await save('saveCustomer', { id, name: val('kName'), phone: val('kPhone'), address: val('kAddr'), note: val('kNote'), opening: val('kOpen') });
+  closeModal();
+  if (id) custView(id); else if (screen === 'khata') khata();
+}
+async function custView(id) {
+  CP = await api('customerProfile', { id });
+  const c = CP;
+  const remind = `Namaste ${c.name} ji \u{1F64F}\n${D.shop.name} mein aapka baki ₹${Math.round(c.udhaar)} hai. Kripya jama karein.\nShukriya - ${D.shop.owner}, ${D.shop.phone}`;
+  openModal(`${sheetHead('\u{1F464} ' + esc(c.name))}
+    <div class="muted">${[c.phone, c.address].filter(Boolean).map(esc).join(' · ')}${c.since ? ' · since ' + esc(dmy(c.since)) : ''}</div>
+    ${c.note ? `<div class="muted">\u{1F4DD} ${esc(c.note)}</div>` : ''}
+    <div class="stats" style="grid-template-columns:1fr 1fr 1fr;margin-top:10px">
+      <div class="stat"><div class="l">Orders · ऑर्डर</div><div class="v" style="font-size:16px">${c.orders.length}</div></div>
+      <div class="stat"><div class="l">Business · कुल</div><div class="v" style="font-size:16px">${money(c.business)}</div></div>
+      <div class="stat"><div class="l">Udhaar · बाकी</div><div class="v ${c.udhaar > 0.5 ? 'warn' : 'ok'}" style="font-size:16px">${money(c.udhaar)}</div></div>
+    </div>
+    <div class="actions">
+      <button class="btn sm" onclick="orderForm({name: CP.name, phone: CP.phone, address: CP.address})">+ New order</button>
+      ${c.phone ? `<a class="btn sm alt" href="tel:${esc(c.phone)}">\u{1F4DE} Call</a>` : ''}
+      ${c.udhaar > 0.5 ? `<button class="btn sm alt" onclick="paymentForm('Customer', CP.name)">\u{1F4B0} Received</button>
+        <a class="btn sm green" target="_blank" href="${phoneLink(c.phone, remind)}">Udhaar reminder</a>` : ''}
+      <button class="btn sm alt" onclick="custForm(CP.id)">✏️ Edit</button>
+    </div>
+    <div class="card" style="margin-top:12px"><h2>Orders · ऑर्डर</h2><div class="list">
+      ${c.orders.map((o, i) => `<div class="it" style="display:block"><div style="display:flex;justify-content:space-between;gap:8px">
+          <div class="t">${esc(o.no)} · ${esc(dmy(o.date))}</div><span class="pill ${o.status === 'Delivered' ? 'Ready' : ''}">${esc(o.status)}</span></div>
+        <div class="s">${esc(o.details)}</div>
+        <div class="s">Delivery ${esc(dmy(o.delivery))} · Total ${money(o.amount)} · Paid ${money(orderPaid(o))}${o.status !== 'Delivered' && o.status !== 'Cancelled' && orderLeft(o) > 0 ? ` · Baki <b class="warn">${money(orderLeft(o))}</b>` : ''}</div>
+        <button class="btn sm alt" style="margin-top:4px;padding:4px 8px;font-size:12px" onclick="showOrderReceipt(CP.orders[${i}])">\u{1F9FE} Receipt</button></div>`).join('')
+        || '<div class="muted">No orders yet</div>'}
+    </div></div>
+    <div class="card"><h2>Bills · बिल</h2><div class="list">
+      ${c.sales.map(s => `<div class="it" onclick="saleView('${esc(s.bill)}')" style="cursor:pointer"><div><div class="t" style="font-weight:500">${esc(s.bill)} · ${esc(dmy(s.date))}</div><div class="s">${esc(s.items)}</div></div>
+        <div class="num">${money(s.net)}${num(s.balance) > 0 ? `<div class="s warn">baki ${money(s.balance)}</div>` : ''}</div></div>`).join('') || '<div class="muted">No bills yet</div>'}
+    </div></div>
+    ${c.opening ? `<div class="card"><div class="sumrow"><span>Old udhaar (before app) · पुराना उधार</span><b class="warn">${money(c.opening)}</b></div></div>` : ''}
+    ${c.payments.length ? `<div class="card"><h2>Payments received · जमा</h2><div class="list">
+      ${c.payments.map(p => `<div class="it"><div><div class="t" style="font-weight:500">${esc(dmy(p.date))} · ${esc(p.mode)}</div><div class="s">${esc(p.note)}</div></div><div class="num ok">${money(p.amount)}</div></div>`).join('')}
+    </div></div>` : ''}`);
+}
+function paymentForm(type, name) {
+  const names = (type === 'Customer' ? D.clients : D.suppliers).map(x => x.name);
+  openModal(`${sheetHead(type === 'Customer' ? 'Money received / पैसे मिले' : 'Money paid / पैसे दिए')}
+    <label>${type === 'Customer' ? 'Customer · ग्राहक' : 'Supplier · सप्लायर'}</label><input id="yName" list="payList" value="${esc(name)}">
+    ${datalist('payList', names)}
+    <div class="row"><div><label>Amount · रकम</label><input id="yAmt" type="number" inputmode="decimal"></div>
+      <div><label>Mode · तरीका</label><select id="yMode"><option>Cash</option><option>UPI</option><option>Bank</option><option>Cheque</option></select></div></div>
+    <label>Note · नोट</label><input id="yNote">
+    <button class="btn full" onclick="doPayment('${type}')">Save · सेव करें</button>`);
+}
+async function doPayment(type) {
+  await save('savePayment', { partyType: type, party: val('yName'), amount: val('yAmt'), mode: val('yMode'), note: val('yNote') });
+  closeModal(); go('khata');
+}
+
+// ---------- Vyapari Khata (suppliers) ----------
+let V = null; // open statement
+function vyapari() {
+  const q = (val('vq') || '').toLowerCase();
+  const all = D.suppliers;
+  const pend = all.filter(v => v.balance > 0.5);
+  $('app').innerHTML = `
+    <div class="stats">
+      <div class="stat"><div class="l">Total payable · कुल देना है</div><div class="v low">${money(D.dash.toPay)}</div></div>
+      <div class="stat"><div class="l">Vyapari pending · बाकी वाले</div><div class="v">${pend.length} <span class="muted">/ ${all.length}</span></div></div>
+    </div>
+    <div class="row" style="margin-bottom:10px">
+      <input id="vq" placeholder="Search vyapari / खोजें" value="${esc(q)}" oninput="vyList()">
+      <button class="btn sm" style="flex:0 0 auto" onclick="vyForm()">+ Add</button>
+    </div>
+    <div class="card list" id="vyList"></div>`;
+  vyList();
+}
+function vyList() {
+  const q = val('vq').toLowerCase();
+  const list = D.suppliers.filter(v => (v.name + ' ' + v.city + ' ' + v.phone).toLowerCase().includes(q));
+  $('vyList').innerHTML = list.map(v => `
+    <div class="it" onclick="vyView(this.dataset.n)" data-n="${esc(v.name)}">
+      <div><div class="t">${esc(v.name)}</div>
+        <div class="s">${[v.city, v.phone].filter(Boolean).map(esc).join(' · ')}</div>
+        <div class="s">Maal ${money(v.purchased + v.opening)} · Paid ${money(v.paid)}</div></div>
+      <div class="num ${v.balance > 0.5 ? 'low' : 'ok'}">${v.balance > 0.5 ? money(v.balance) : v.balance < -0.5 ? money(-v.balance) + '<div class="s">advance</div>' : 'Clear ✓'}</div>
+    </div>`).join('') || '<div class="muted">No vyapari yet. Tap + Add. / अभी कोई व्यापारी नहीं</div>';
+}
+function vyForm(name) {
+  const v = name ? D.suppliers.find(x => x.name === name) : {};
+  const edit = !!(v && v.id);
+  openModal(`${sheetHead(name ? 'Edit vyapari / बदलें' : 'New vyapari / नया व्यापारी')}
+    <label>Name · नाम</label><input id="vName" value="${esc(v.name)}" ${name ? 'readonly' : ''} placeholder="e.g. Ramesh Cotton Traders">
+    <div class="row"><div><label>Phone · फ़ोन</label><input id="vPhone" type="tel" value="${esc(v.phone)}"></div>
+      <div><label>City · शहर</label><input id="vCity" value="${esc(v.city)}"></div></div>
+    <label>Old due (before using app) · पुराना बाकी</label><input id="vOpen" type="number" inputmode="decimal" value="${esc(v.opening || 0)}">
+    <label>Note · नोट</label><input id="vNote">
+    <button class="btn full" onclick="doVy('${edit ? esc(v.id) : ''}')">Save · सेव करें</button>`);
+}
+async function doVy(id) {
+  await save('saveVyapari', { id, name: val('vName'), phone: val('vPhone'), city: val('vCity'), opening: val('vOpen'), note: val('vNote') });
+  closeModal();
+  if (screen === 'vyapari') vyapari();
+  if (V && V.name === val('vName')) vyView(V.name);
+}
+async function vyView(name) {
+  V = await api('vyapariStatement', { name });
+  if (screen === 'vyapari' && $('vyList')) vyapari();   // keep the list and totals behind the window up to date
+  const v = V;
+  openModal(`${sheetHead('\u{1F3EA} ' + esc(v.name))}
+    <div class="muted">${[v.city, v.phone].filter(Boolean).map(esc).join(' · ')}</div>
+    <div class="stats" style="grid-template-columns:1fr 1fr 1fr;margin-top:10px">
+      <div class="stat"><div class="l">Total bills · कुल बिल</div><div class="v" style="font-size:16px">${money(v.purchased + v.opening)}</div></div>
+      <div class="stat"><div class="l">Paid · दिया</div><div class="v ok" style="font-size:16px">${money(v.paid)}</div></div>
+      <div class="stat"><div class="l">Due · बाकी</div><div class="v ${v.pending > 0.5 ? 'low' : 'ok'}" style="font-size:16px">${money(v.pending)}</div></div>
+    </div>
+    <div class="actions">
+      <button class="btn sm" onclick="vyPayForm()">\u{1F4B8} Pay / भुगतान</button>
+      <button class="btn sm alt" onclick="vyBillForm()">\u{1F9FE} + Add bill / बिल जोड़ें</button>
+      <a class="btn sm green" target="_blank" href="${phoneLink(v.phone, statementText(v))}">\u{1F4E4} Share hisab</a>
+      ${v.phone ? `<a class="btn sm alt" href="tel:${esc(v.phone)}">\u{1F4DE} Call</a>` : ''}
+      <button class="btn sm alt" onclick="vyForm(V.name)">✏️ ${v.id ? 'Edit' : 'Save to list'}</button>
+    </div>
+    ${(v.bills || []).length ? `<h2 style="margin:14px 0 4px">Bills · बिल</h2><div class="card list">
+      ${v.bills.map((b, i) => `<div class="it"><div>
+          <div class="t">${b.invoice ? 'Bill ' + esc(b.invoice) : 'Bill / खरीद'} · ${esc(dmy(b.date))}</div>
+          <div class="s">${esc(b.product)}${b.delivery ? ' · maal aaya ' + esc(dmy(b.delivery)) : ''}${b.note ? ' · ' + esc(b.note) : ''}</div>
+          <div class="s">Amount ${money(b.amount)} · Paid ${money(b.paid)}</div>
+          ${b.canEdit ? `<div class="actions" style="margin-top:4px"><button class="btn sm alt" style="padding:4px 10px;font-size:12px" onclick="vyBillForm(${i})">✏️ Edit</button>
+            <button class="btn sm red" style="padding:4px 10px;font-size:12px" onclick="vyBillDel(${i})">\u{1F5D1} Delete</button></div>` : ''}</div>
+        <div class="num">${b.pending > 0.5 ? `<div class="low">${money(b.pending)}</div><div class="s">pending</div>` : '<div class="ok">Paid ✓</div>'}</div></div>`).join('')}
+      </div><h2 style="margin:14px 0 4px">Hisab · हिसाब</h2>` : ''}
+    <div class="card list" style="margin-top:12px">
+      ${v.rows.map((r, i) => `<div class="it"><div><div class="t" style="font-weight:500">${esc(r.text)}</div>
+          <div class="s">${esc(String(r.date).slice(0, 10))} · balance ${money(r.balance)}</div>
+          ${r.receipt ? `<div class="actions" style="margin-top:4px"><button class="btn sm alt" style="padding:4px 10px;font-size:12px" onclick="showReceipt(V.rows[${i}].receipt)">\u{1F9FE} Receipt</button>
+            <button class="btn sm alt" style="padding:4px 10px;font-size:12px" onclick="vyPayForm(${i})">✏️ Edit</button>
+            <button class="btn sm red" style="padding:4px 10px;font-size:12px" onclick="vyPayDel(${i})">\u{1F5D1} Delete</button></div>` : ''}</div>
+        <div class="num">${r.debit ? `<div class="low">+${money(r.debit)}</div>` : ''}${r.credit ? `<div class="ok">−${money(r.credit)}</div>` : ''}</div></div>`).join('')}
+      ${v.opening ? `<div class="it"><div><div class="t" style="font-weight:500">Old due / पुराना बाकी</div></div><div class="num low">+${money(v.opening)}</div></div>` : ''}
+      ${!v.rows.length && !v.opening ? '<div class="muted">No entries yet</div>' : ''}
+    </div>`);
+}
+function statementText(v) {
+  const L = [`*${D.shop.name}*`, `${D.shop.address} · ${D.shop.phone}`, '', `*Hisab / हिसाब: ${v.name}*`, `Date: ${D.today.split('-').reverse().join('-')}`, '------------------------'];
+  if (v.opening) L.push(`Old due / पुराना: ₹${v.opening}`);
+  L.push(`Total maal / कुल माल: ₹${v.purchased}`, `Total paid / कुल दिया: ₹${v.paid}`, `*Pending / बाकी: ₹${v.pending}*`, '------------------------', 'Recent / हाल की एंट्री:');
+  v.rows.slice(0, 10).forEach(r => L.push(`${String(r.date).slice(0, 10).split('-').reverse().join('-')}  ${r.debit ? '+₹' + r.debit : '−₹' + r.credit}  ${r.text}`));
+  L.push('', `- ${D.shop.owner}`);
+  return L.join('\n');
+}
+function vyBillForm(i) {
+  const v = V, b = i === undefined ? null : v.bills[i];
+  openModal(`${sheetHead(b ? '✏️ Edit bill / बिल बदलें' : '\u{1F9FE} New bill / नया बिल: ' + esc(v.name))}
+    <div class="row"><div><label>Invoice / Bill No · बिल नं.</label><input id="bInv" value="${esc(b ? b.invoice : '')}" placeholder="e.g. 1452"></div>
+      <div><label>Invoice date · बिल की तारीख</label><input id="bDate" type="date" value="${esc(b ? b.date : D.today)}" max="${D.today}"></div></div>
+    <label>Product / raw material · माल</label>
+    <input id="bProd" value="${esc(b ? b.product : '')}" placeholder="Rui 2 bori, Kapda 50 m, thread…">
+    <div class="chips">${D.raw.slice(0, 8).map(r => `<button type="button" onclick="$('bProd').value=this.textContent">${esc(r.name)}</button>`).join('')}</div>
+    <label>Bill amount · बिल की रकम (₹)</label><input id="bAmt" type="number" inputmode="decimal" value="${b ? b.amount : ''}">
+    <label>Delivery date (maal aaya) · माल कब आया</label><input id="bDel" type="date" value="${esc(b ? b.delivery : D.today)}">
+    <label>Note · नोट</label><input id="bNote" value="${esc(b ? b.note : '')}" placeholder="optional">
+    ${b && b.paid > 0 ? `<div class="muted">Paid so far on this bill: ${money(b.paid)} (payments are not changed here)</div>` : ''}
+    <button class="btn full" onclick="doVyBill('${b ? esc(b.billId) : ''}')">${b ? 'Save changes · बदलाव सेव करें' : 'Save bill · बिल सेव करें'}</button>`);
+}
+async function doVyBill(billId) {
+  // record only: a bill never changes stock (use Purchase for that)
+  const arg = { invoice: val('bInv'), invoiceDate: val('bDate'), product: val('bProd'), amount: val('bAmt'), delivery: val('bDel'), note: val('bNote') };
+  if (billId) await save('updateVyBill', Object.assign(arg, { billId }));
+  else await save('saveVyBill', Object.assign(arg, { supplier: V.name }));
+  await vyView(V.name);
+}
+async function vyBillDel(i) {
+  const b = V.bills[i];
+  if (!confirm(`Delete bill ${b.invoice || ''} (${money(b.amount)})? / यह बिल हटाएं?` +
+    (b.paid > 0 ? `\n\nPayments made for it stay in the hisab (they will count against other bills / as advance). Delete the payment too if it was also wrong.` : ''))) return;
+  await save('deleteVyBill', { billId: b.billId });
+  await vyView(V.name);
+}
+function vyPaySum() {
+  let t = 0;
+  document.querySelectorAll('.vyb:checked').forEach(c => { t += num(c.dataset.p); });
+  if (document.querySelectorAll('.vyb:checked').length) $('yAmt').value = Math.round(t * 100) / 100;
+}
+function vyPayForm(ri) {
+  const v = V, rc = ri === undefined ? null : v.rows[ri].receipt;
+  const tied = {};   // when editing: this payment's own share of each bill
+  if (rc) String(rc.billsRaw || '').split(',').filter(Boolean).forEach(t => { const k = t.lastIndexOf(':'); tied[t.slice(0, k)] = num(t.slice(k + 1)); });
+  const open = (v.bills || []).map(b => Object.assign({}, b, { pending: b.pending + (tied[b.billId] || 0), on: !!tied[b.billId] }))
+    .filter(b => b.pending > 0.5);
+  openModal(`${sheetHead(rc ? '✏️ Edit payment / भुगतान बदलें · ' + esc(rc.no) : 'Pay / भुगतान: ' + esc(v.name))}
+    <div class="total" style="font-size:16px"><span>Pending · बाकी</span><span class="low">${money(v.pending + (rc ? rc.amount : 0))}</span></div>
+    ${open.length ? `<label>Paying for which bill? · किस बिल का भुगतान (optional)</label>
+      <div class="card list" style="padding:4px 10px">${open.map(b => `<label style="display:flex;gap:10px;align-items:center;margin:0;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px;color:var(--ink)">
+        <input type="checkbox" class="vyb" style="width:22px;height:22px;flex:0 0 auto" data-id="${esc(b.billId)}" data-p="${b.pending}" ${b.on ? 'checked' : ''} onchange="vyPaySum()">
+        <span style="flex:1">${b.invoice ? 'Bill ' + esc(b.invoice) : esc(b.product)} · ${esc(dmy(b.date))}<br><span class="muted">Amount ${money(b.amount)}${b.paid ? ' · paid ' + money(b.paid) : ''}</span></span>
+        <b class="low">${money(b.pending)}</b></label>`).join('')}</div>` : ''}
+    <label>Amount · रकम</label><input id="yAmt" type="number" inputmode="decimal" value="${rc ? rc.amount : ''}">
+    ${v.pending > 0 && !rc ? `<button class="btn alt sm" style="margin-top:8px" onclick="$('yAmt').value=${v.pending}">Full clear / पूरा हिसाब साफ़ (${money(v.pending)})</button>` : ''}
+    <div class="row"><div><label>Mode · तरीका</label>${modeSelect('yMode')}</div>
+      <div><label>UTR / Cheque No · रेफ़रेंस</label><input id="yRef" value="${esc(rc ? rc.ref : '')}" placeholder="UTR or cheque no."></div></div>
+    <label>Payment date · भुगतान की तारीख</label><input id="yDate" type="date" value="${esc(rc ? rc.iso : D.today)}" max="${D.today}">
+    <label>Note · नोट</label><input id="yNote" value="${esc(rc ? rc.note : '')}">
+    <button class="btn full" onclick="doVyPay(${rc ? `'${esc(rc.no)}'` : ''})">${rc ? 'Save changes · बदलाव सेव करें' : 'Pay & make receipt · रसीद बनाएं'}</button>`);
+  if (rc) $('yMode').value = rc.mode || 'Cash';
+}
+async function vyPayDel(ri) {
+  const rc = V.rows[ri].receipt;
+  if (!confirm(`Delete payment ${rc.no} of ${money(rc.amount)} (${rc.date})? / यह भुगतान हटाएं?\n\nThe amount will show as due again.`)) return;
+  await save('deleteVyPayment', { id: rc.no });
+  if (screen === 'vyapari') vyapari();
+  await vyView(V.name);
+}
+async function doVyPay(editId) {
+  const amt = num(val('yAmt'));
+  if (editId) {
+    const bills = [...document.querySelectorAll('.vyb:checked')].map(c => ({ billId: c.dataset.id, amount: num(c.dataset.p) }));
+    await save('updateVyPayment', { id: editId, amount: val('yAmt'), mode: val('yMode'), ref: val('yRef'), date: val('yDate'), note: val('yNote'), bills });
+    if (screen === 'vyapari') vyapari();
+    await vyView(V.name);
+    return;
+  }
+  if (amt > V.pending + 0.5 && !confirm(`Amount is more than pending (${money(V.pending)}). Continue? / बाकी से ज़्यादा है, फिर भी?`)) return;
+  const bills = [...document.querySelectorAll('.vyb:checked')].map(c => ({ billId: c.dataset.id, amount: num(c.dataset.p) }));
+  const r = await save('savePayment', { partyType: 'Supplier', party: V.name, amount: val('yAmt'), mode: val('yMode'), ref: val('yRef'), date: val('yDate'), note: val('yNote'), bills });
+  if (screen === 'vyapari') vyapari();
+  if (r.receipt) showReceipt(r.receipt); else closeModal();
+}
+
+/** Draws a receipt card as a picture (PNG data URL). Long values wrap onto their own lines. */
+function cardImage(spec) {
+  const W = 720, PAD = 40;
+  const c = document.createElement('canvas'), x = c.getContext('2d');
+  const F = (w, size) => `${w} ${size}px system-ui, "Noto Sans Devanagari", sans-serif`;
+  function wrap(text, width) {
+    const words = String(text).split(' '), lines = [];
+    let cur = '';
+    words.forEach(w => { const t = cur ? cur + ' ' + w : w; if (x.measureText(t).width > width && cur) { lines.push(cur); cur = w; } else cur = t; });
+    if (cur) lines.push(cur);
+    return lines;
+  }
+  // measure first, so the picture is exactly as tall as needed
+  const layout = spec.rows.map(([k, v]) => {
+    x.font = F('normal', 22); const kw = x.measureText(k).width;
+    x.font = F('bold', 24);
+    const fits = x.measureText(String(v)).width <= W - 2 * PAD - kw - 24;
+    return { k, v: String(v), fits, lines: fits ? [String(v)] : wrap(v, W - 2 * PAD) };
+  });
+  let H = 270;
+  layout.forEach(r => { H += r.fits ? 56 : 36 + r.lines.length * 34 + 22; });
+  H += (spec.big ? 150 : 0) + spec.summary.length * 46 + (spec.stamp ? 120 : 0) + 50;
+  c.width = W; c.height = H;
+  x.fillStyle = '#ffffff'; x.fillRect(0, 0, W, H);
+  x.fillStyle = '#1f4e79'; x.fillRect(0, 0, W, 150);
+  x.fillStyle = '#fff'; x.textAlign = 'center';
+  x.font = F('bold', 40); x.fillText(D.shop.name, W / 2, 62);
+  x.font = F('normal', 22); x.fillText(D.shop.address, W / 2, 100);
+  x.fillText('\u{1F4DE} ' + D.shop.phone + ' · ' + D.shop.owner, W / 2, 132);
+  x.fillStyle = '#1d1d1f'; x.font = F('bold', 30); x.fillText(spec.title, W / 2, 205);
+  let y = 270; x.textAlign = 'left';
+  layout.forEach(r => {
+    x.fillStyle = '#6b6b70'; x.font = F('normal', 22); x.fillText(r.k, PAD, y);
+    x.fillStyle = '#1d1d1f'; x.font = F('bold', 24);
+    if (r.fits) { x.textAlign = 'right'; x.fillText(r.v, W - PAD, y); x.textAlign = 'left'; y += 56; }
+    else { y += 36; r.lines.forEach(l => { x.fillText(l, PAD, y); y += 34; }); y += 22; }
+  });
+  if (spec.big) {
+    x.fillStyle = spec.big.bg; x.fillRect(30, y - 10, W - 60, 110);
+    x.fillStyle = spec.big.color; x.textAlign = 'center'; x.font = F('normal', 24); x.fillText(spec.big.label, W / 2, y + 28);
+    x.font = F('bold', 52); x.fillText(spec.big.value, W / 2, y + 86);
+    y += 150; x.textAlign = 'left';
+  }
+  x.strokeStyle = '#e2ddd2'; x.lineWidth = 1; x.beginPath(); x.moveTo(PAD, y - 30); x.lineTo(W - PAD, y - 30); x.stroke();
+  spec.summary.forEach(([k, v, strong, color]) => {
+    x.fillStyle = strong ? '#1d1d1f' : '#6b6b70'; x.font = F(strong ? 'bold' : 'normal', strong ? 26 : 22); x.fillText(k, PAD, y);
+    x.textAlign = 'right'; x.fillStyle = color || '#1d1d1f'; x.fillText(v, W - PAD, y); x.textAlign = 'left';
+    y += 46;
+  });
+  if (spec.stamp) {
+    y += 20; x.save(); x.translate(W / 2, y + 20); x.rotate(-0.05);
+    x.font = F('bold', 30); const sw = x.measureText(spec.stamp).width + 48;
+    x.strokeStyle = '#1e7b45'; x.lineWidth = 4; x.strokeRect(-sw / 2, -38, sw, 76);
+    x.fillStyle = '#1e7b45'; x.textAlign = 'center'; x.fillText(spec.stamp, 0, 11);
+    x.restore();
+  }
+  x.fillStyle = '#6b6b70'; x.textAlign = 'center'; x.font = F('normal', 20);
+  x.fillText(spec.footer, W / 2, H - 24);
+  return c.toDataURL('image/png');
+}
+function receiptImage(rc) {
+  const cleared = rc.after <= 0.5;
+  const rows = [['Receipt No · रसीद नं.', rc.no || '-'], ['Date · तारीख', rc.date], ['Paid to · किसको', rc.party],
+    ['Mode · तरीका', rc.mode], ...(rc.ref ? [[rc.mode === 'Cheque' ? 'Cheque No · चेक नं.' : 'UTR / Ref No', rc.ref]] : [])];
+  if (rc.bills) rows.push(['For bill · बिल', rc.bills]);
+  if (rc.note) rows.push(['Note · नोट', rc.note]);
+  return cardImage({
+    title: 'PAYMENT RECEIPT · भुगतान रसीद', rows,
+    big: { label: 'Amount Paid · भुगतान रकम', value: money(rc.amount), color: '#1e7b45', bg: '#eaf6ee' },
+    summary: [['Previous pending · पहले बाकी', money(rc.before)], ['Paid now · अभी दिया', '− ' + money(rc.amount)],
+      ['Now pending · अब बाकी', money(rc.after), true, cleared ? '#1e7b45' : '#b3261e']],
+    stamp: cleared ? '✓ ACCOUNT CLEARED · हिसाब साफ़' : '',
+    footer: 'Paid by ' + D.shop.owner + ', ' + D.shop.name
+  });
+}
+function receiptText(rc) {
+  return [`*${D.shop.name}* – Payment Receipt / भुगतान रसीद`, `Receipt: ${rc.no}   Date: ${rc.date}`, `Paid to: ${rc.party}`,
+    `*Amount: ${money(rc.amount)}* (${rc.mode}${rc.ref ? ', ' + (rc.mode === 'Cheque' ? 'Cheque No ' : 'UTR ') + rc.ref : ''})`,
+    rc.bills ? `For bill / बिल: ${rc.bills}` : '', `Previous pending: ${money(rc.before)}`,
+    `Now pending: ${money(rc.after)}`, rc.after <= 0.5 ? '✅ Account cleared / हिसाब साफ़' : '', `- ${D.shop.owner}`].filter(Boolean).join('\n');
+}
+function showReceipt(rc) {
+  openModal(`${sheetHead('Receipt / रसीद')}` +
+    shareBlock(receiptImage(rc), receiptText(rc), rc.phone, `Receipt-${rc.no}.png`, 'Payment receipt'));
+}
+async function sharePicture() {
+  const sh = lastShare;
+  try {
+    const blob = await (await fetch(sh.img)).blob();
+    const file = new File([blob], sh.file, { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], text: sh.text });
+      return;
+    }
+  } catch (e) { if (e && e.name === 'AbortError') return; }
+  toast('Long-press the picture → Share, or tap Download / फ़ोटो पर देर तक दबाएं', true);
+}
+
+// ---------- Bahi Khata (cash book) ----------
+let bahiDate = null, bahiMonth = null, bahiTab = 'day', B = null;
+async function bahi() {
+  if (!bahiDate) bahiDate = D.today;
+  if (!bahiMonth) bahiMonth = D.today.slice(0, 7);
+  if (!B) $('app').innerHTML = '<div class="loading">Loading… / लोड हो रहा है…</div>';
+  try { B = await api('getBahi', { date: bahiDate, month: bahiMonth }); } catch (e) { return; }
+  if (screen === 'bahi') drawBahi();
+}
+function bahiShift(n) { bahiDate = addDays(bahiDate, n); if (bahiDate > D.today) bahiDate = D.today; bahi(); }
+function drawBahi() {
+  const isDay = bahiTab === 'day';
+  const m = B.month_;
+  $('app').innerHTML = `
+    <div class="stats">
+      <div class="stat"><div class="l">Cash in galla · गल्ले में</div><div class="v">${money(B.cash)}</div></div>
+      <div class="stat"><div class="l">Bank / UPI · बैंक</div><div class="v">${money(B.bank)}</div></div>
+    </div>
+    <div class="row" style="margin-bottom:12px">
+      <button class="btn green sm" onclick="cashForm('In')">+ Money in<br>पैसा आया</button>
+      <button class="btn red sm" onclick="cashForm('Out')">− Expense<br>खर्चा</button>
+      <button class="btn alt sm" onclick="cashForm('Transfer')">⇄ Bank<br>जमा/निकासी</button>
+    </div>
+    <div class="tabs">
+      <button class="${isDay ? 'on' : ''}" onclick="bahiTab='day';drawBahi()">Day · रोज़ का हिसाब</button>
+      <button class="${!isDay ? 'on' : ''}" onclick="bahiTab='month';drawBahi()">Month · महीने का हिसाब</button>
+    </div>
+    ${isDay ? `
+    <div class="datenav">
+      <button class="btn alt sm" onclick="bahiShift(-1)">◀</button>
+      <input type="date" value="${B.date}" max="${D.today}" onchange="if(this.value){bahiDate=this.value;bahi()}">
+      <button class="btn alt sm" onclick="bahiShift(1)" ${B.date >= D.today ? 'disabled' : ''}>▶</button>
+    </div>
+    <div class="card">
+      <div class="sumrow muted"><span>Opening · शुरुआती</span><span>Cash ${money(B.openCash)} · Bank ${money(B.openBank)}</span></div>
+      <div class="list">${B.day.map(e => `<div class="it"><div><div class="t" style="font-weight:500">${esc(e.text)}</div>
+          <div class="s">${esc(String(e.date).slice(11, 16))} ${esc(e.dir === 'transfer' ? '' : e.cat)} · ${esc(e.mode)}</div>
+          ${e.manual ? `<button class="btn sm red" style="margin-top:4px;padding:4px 8px;font-size:12px" onclick="delCash('${esc(e.id)}')">Delete</button>` : ''}</div>
+        <div class="num ${e.dir === 'in' ? 'in' : e.dir === 'out' ? 'out' : ''}">${e.dir === 'in' ? '+' : e.dir === 'out' ? '−' : '⇄ '}${money(e.amt)}</div></div>`).join('')
+        || '<div class="muted" style="padding:10px 0">No entries this day / इस दिन कोई एंट्री नहीं</div>'}</div>
+      <div class="sumrow big"><span class="in">In · आया</span><span class="in">${money(B.dayIn)}</span></div>
+      <div class="sumrow"><span class="out" style="font-weight:700">Out · गया</span><span class="out" style="font-weight:700">${money(B.dayOut)}</span></div>
+      <div class="sumrow big"><span>Closing · बंद</span><span>Cash ${money(B.closeCash)} · Bank ${money(B.closeBank)}</span></div>
+    </div>` : `
+    <div class="datenav"><input type="month" value="${B.month}" max="${D.today.slice(0, 7)}" onchange="if(this.value){bahiMonth=this.value;bahi()}"></div>
+    <div class="card">
+      <h2>Profit & Loss · नफ़ा-नुकसान</h2>
+      <div class="sumrow"><span>Total sale · कुल बिक्री</span><span>${money(m.sales)}</span></div>
+      <div class="sumrow"><span>Profit on sales · बिक्री का मुनाफ़ा</span><span class="in">${money(m.grossProfit)}</span></div>
+      <div class="sumrow"><span>+ Other income · अन्य आमदनी</span><span class="in">${money(m.otherIncome)}</span></div>
+      ${m.kept ? `<div class="sumrow"><span>+ Advance kept (cancelled) · रखा एडवांस</span><span class="in">${money(m.kept)}</span></div>` : ''}
+      <div class="sumrow"><span>− Shop expenses · दुकान खर्च</span><span class="out">${money(m.expenses)}</span></div>
+      <div class="sumrow big"><span>Net profit · असली मुनाफ़ा</span><span class="${m.net >= 0 ? 'in' : 'out'}">${money(m.net)}</span></div>
+      <div class="sumrow muted"><span>Taken for home · घर खर्च</span><span>${money(m.home)}</span></div>
+    </div>
+    <div class="card"><h2>Expenses · खर्चे</h2><div class="list">
+      ${m.byCat.map(c => `<div class="it"><div class="t" style="font-weight:500">${esc(c.cat)}</div><div class="num out">${money(c.amt)}</div></div>`).join('') || '<div class="muted">No expenses / कोई खर्च नहीं</div>'}
+    </div></div>
+    <div class="card">
+      <div class="sumrow"><span>All money in · कुल आया</span><span class="in">${money(m.moneyIn)}</span></div>
+      <div class="sumrow"><span>All money out · कुल गया</span><span class="out">${money(m.moneyOut)}</span></div>
+      <div class="muted">Includes purchases, supplier payments, udhaar received, etc.</div>
+    </div>`}`;
+}
+function cashForm(type) {
+  const head = type === 'In' ? 'Money in / पैसा आया' : type === 'Out' ? 'Expense / खर्चा' : 'Cash ↔ Bank';
+  const cats = type === 'In' ? D.cats.in : D.cats.out;
+  openModal(`${sheetHead(head)}
+    ${type === 'Transfer' ? `<label>What · क्या किया</label><select id="cMode">
+        <option value="Cash→Bank">Cash deposited in bank · बैंक में जमा</option>
+        <option value="Bank→Cash">Cash withdrawn from bank · बैंक से निकाला</option></select>`
+      : `<label>Category · खाता</label><select id="cCat">${cats.map(c => `<option>${esc(c)}</option>`).join('')}</select>`}
+    <div class="row"><div><label>Amount · रकम</label><input id="cAmt" type="number" inputmode="decimal"></div>
+      ${type === 'Transfer' ? '' : `<div style="flex:0 0 110px"><label>Mode · तरीका</label>${modeSelect('cMode')}</div>`}</div>
+    <label>Date · तारीख</label><input id="cDate" type="date" value="${bahiDate || D.today}" max="${D.today}">
+    <label>Note · नोट</label><input id="cNote" placeholder="${type === 'Out' ? 'e.g. November rent' : ''}">
+    <button class="btn full" onclick="doCash('${type}')">Save · सेव करें</button>`);
+}
+async function doCash(type) {
+  await save('saveCashEntry', { type, category: val('cCat'), amount: val('cAmt'), mode: val('cMode'), date: val('cDate'), note: val('cNote') });
+  closeModal(); bahiDate = val('cDate') || bahiDate; bahi();
+}
+async function delCash(id) {
+  if (!confirm('Delete this entry? / यह एंट्री हटाएं?')) return;
+  await save('deleteCashEntry', { id }); bahi();
+}
+
+// ---------- Reports ----------
+const RP_TYPES = [['day', 'Day · दिन'], ['week', 'Week · हफ़्ता'], ['month', 'Month · महीना'], ['quarter', 'Quarter · तिमाही'],
+  ['year', 'Year · साल'], ['fy', 'Financial year · वित्त वर्ष'], ['custom', 'Custom · तारीख से तारीख']];
+const RP_SECTIONS = [['summary', 'Summary & P&L · सारांश'], ['bahi', 'Bahi Khata · बही'], ['sales', 'Sales · बिक्री'], ['orders', 'Orders · ऑर्डर'],
+  ['purchases', 'Purchases · खरीद'], ['expenses', 'Expenses · खर्चे'], ['udhaar', 'Customer udhaar · उधार'], ['vyapari', 'Vyapari dues · व्यापारी'],
+  ['stock', 'Stock · स्टॉक']];
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+let RP = null, RPdata = null;
+const ymd = (y, m, d) => new Date(Date.UTC(y, m - 1, d)).toISOString().slice(0, 10);
+const ymdParts = iso => iso.split('-').map(Number);
+const lastDay = (y, m) => new Date(Date.UTC(y, m, 0)).getUTCDate();
+function rpRange(type, a) {
+  const [y, m, d] = ymdParts(a);
+  if (type === 'day') return [a, a];
+  if (type === 'week') { const wd = (new Date(Date.UTC(y, m - 1, d)).getUTCDay() + 6) % 7; return [ymd(y, m, d - wd), ymd(y, m, d - wd + 6)]; } // Mon–Sun
+  if (type === 'month') return [ymd(y, m, 1), ymd(y, m, lastDay(y, m))];
+  if (type === 'quarter') { const s = Math.floor((m - 1) / 3) * 3 + 1; return [ymd(y, s, 1), ymd(y, s + 2, lastDay(y, s + 2))]; }
+  if (type === 'year') return [ymd(y, 1, 1), ymd(y, 12, 31)];
+  const fy = m >= 4 ? y : y - 1; return [ymd(fy, 4, 1), ymd(fy + 1, 3, 31)];   // financial year Apr–Mar
+}
+function rpApplyRange() { if (RP.type !== 'custom') [RP.from, RP.to] = rpRange(RP.type, RP.anchor); RPdata = null; }
+function rpShift(n) {
+  const [y, m, d] = ymdParts(RP.anchor), t = RP.type;
+  RP.anchor = t === 'day' ? ymd(y, m, d + n) : t === 'week' ? ymd(y, m, d + 7 * n) : t === 'month' ? ymd(y, m + n, 1)
+    : t === 'quarter' ? ymd(y, m + 3 * n, 1) : ymd(y + n, m, 1);
+  rpApplyRange(); reports();
+}
+function rpLabel() {
+  const [y, m] = ymdParts(RP.from);
+  switch (RP.type) {
+    case 'day': return dmy(RP.from) + (RP.from === D.today ? ' · Today' : '');
+    case 'week': return 'Week ' + dmy(RP.from).slice(0, 5) + ' – ' + dmy(RP.to);
+    case 'month': return MONTHS[m - 1] + ' ' + y;
+    case 'quarter': return MONTHS[m - 1] + '–' + MONTHS[m + 1] + ' ' + y;
+    case 'year': return 'Year ' + y;
+    default: return 'FY ' + y + '-' + String(y + 1).slice(2) + ' (Apr–Mar)';
+  }
+}
+function rpType(k) {
+  RP.type = k;
+  if (k !== 'custom') RP.anchor = D.today;
+  rpApplyRange(); reports();
+}
+function rpToggle(k) { RP.sections.has(k) ? RP.sections.delete(k) : RP.sections.add(k); RPdata = null; reports(); }
+function rpAll(on) { RP.sections = new Set(on ? RP_SECTIONS.map(s => s[0]) : []); RPdata = null; reports(); }
+function reports() {
+  if (!RP) { RP = { type: 'month', anchor: D.today, sections: new Set(RP_SECTIONS.map(s => s[0])) }; rpApplyRange(); }
+  const custom = RP.type === 'custom';
+  if (custom && !RP.from) { RP.from = ymd(...ymdParts(D.today).slice(0, 2), 1); RP.to = D.today; }
+  $('app').innerHTML = `
+    <div class="card"><h2>Period · अवधि</h2>
+      <div class="chips">${RP_TYPES.map(([k, l]) => `<button class="${RP.type === k ? 'on' : ''}" onclick="rpType('${k}')">${l}</button>`).join('')}</div>
+      ${custom ? `<div class="row" style="margin-top:10px">
+          <div><label>From · से</label><input id="rpFrom" type="date" value="${RP.from}" onchange="RP.from=this.value;RPdata=null"></div>
+          <div><label>To · तक</label><input id="rpTo" type="date" value="${RP.to}" onchange="RP.to=this.value;RPdata=null"></div></div>`
+        : `<div class="datenav" style="margin-top:10px"><button class="btn alt sm" onclick="rpShift(-1)" aria-label="Previous">◀</button>
+          <div class="rplabel">${esc(rpLabel())}<div class="muted">${dmy(RP.from)} → ${dmy(RP.to)}</div></div>
+          <button class="btn alt sm" onclick="rpShift(1)" aria-label="Next">▶</button></div>`}
+    </div>
+    <div class="card"><h2>Include · क्या शामिल करें</h2>
+      <div class="chips">${RP_SECTIONS.map(([k, l]) => `<button class="${RP.sections.has(k) ? 'on' : ''}" onclick="rpToggle('${k}')">${RP.sections.has(k) ? '✓ ' : ''}${l}</button>`).join('')}</div>
+      <div class="chips" style="margin-top:8px"><button onclick="rpAll(true)">Select all · सभी</button><button onclick="rpAll(false)">Clear · हटाएं</button></div>
+    </div>
+    <div class="row">
+      <button class="btn" onclick="rpShow()">\u{1F441} Show · देखें</button>
+      <button class="btn alt" onclick="rpExport('pdf')">\u{1F4C4} PDF</button>
+      <button class="btn alt" onclick="rpExport('xlsx')">\u{1F4CA} Excel</button>
+    </div>
+    <div id="rpOut" style="margin-top:12px"></div>`;
+  if (RPdata) rpDraw();
+}
+function rpArgs() {
+  if (RP.type === 'custom') { RP.from = val('rpFrom'); RP.to = val('rpTo'); }
+  if (!RP.from || !RP.to || RP.from > RP.to) { toast('"From" date must be before "To" date / सही तारीख चुनें', true); return null; }
+  if (!RP.sections.size) { toast('Choose at least one section / कम से कम एक चुनें', true); return null; }
+  return { from: RP.from, to: RP.to, sections: RP_SECTIONS.map(s => s[0]).filter(k => RP.sections.has(k)) };
+}
+async function rpShow() {
+  const a = rpArgs(); if (!a) return;
+  RPdata = await api('getReport', a);
+  rpDraw();
+  $('rpOut').scrollIntoView({ behavior: 'smooth' });
+}
+function rpTable(t) {
+  const summary = t.headers.every(h => !h);
+  const head = t.title ? `<h3 class="rptitle">${esc(t.title)}</h3>` : '';
+  if (summary) {
+    return head + t.rows.map((r, i) => `<div class="sumrow ${String(r[0]).startsWith('=') ? 'big' : ''}"><span>${esc(r[0])}</span>
+      <b>${t.rowMoney && t.rowMoney[i] ? money(r[1]) : num(r[1]).toLocaleString('en-IN')}</b></div>`).join('');
+  }
+  const isM = c => (t.money || []).includes(c);
+  const td = (v, c) => isM(c) && v !== '' ? `<td class="n">${money(v)}</td>` : typeof v === 'number' ? `<td class="n">${v.toLocaleString('en-IN')}</td>` : `<td>${esc(v)}</td>`;
+  if (!t.rows.length) return head + '<div class="muted" style="padding:6px 0 10px">No entries in this period / इस अवधि में कोई एंट्री नहीं</div>';
+  return head + `<div class="tblwrap"><table class="rp"><thead><tr>${t.headers.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead>
+    <tbody>${t.rows.map(r => `<tr>${r.map(td).join('')}</tr>`).join('')}</tbody>
+    ${t.total ? `<tfoot><tr>${t.total.map(td).join('')}</tr></tfoot>` : ''}</table></div>`;
+}
+function rpDraw() {
+  const R = RPdata;
+  $('rpOut').innerHTML = `<div class="card"><h2>${esc(R.shop.name)} · Report</h2>
+      <div class="muted">${dmy(R.from)}${R.from !== R.to ? ' to ' + dmy(R.to) : ''} · made ${esc(R.generated)}</div></div>
+    ${R.groups.map(g => `<div class="card"><h2>${esc(g.title)}</h2>${g.tables.map(rpTable).join('')}</div>`).join('')}`;
+}
+async function rpExport(fmt) {
+  const a = rpArgs(); if (!a) return;
+  a.format = fmt;
+  toast(`Making ${fmt === 'pdf' ? 'PDF' : 'Excel'}… this takes 10–30 seconds / बन रहा है…`);
+  const r = await api('exportReport', a);
+  if (r.data64) return rpFileReady(r, fmt);
+  openModal(`${sheetHead((fmt === 'pdf' ? '\u{1F4C4} PDF' : '\u{1F4CA} Excel') + ' ready · तैयार')}
+    <div class="t">${esc(r.name)}</div>
+    <div class="muted" style="margin:6px 0">Saved in your Google Drive, folder "${esc(D.shop.name)} Reports". · गूगल ड्राइव में सेव हुआ।</div>
+    <a class="btn full" target="_blank" href="${esc(r.url)}">Open · खोलें</a>
+    <a class="btn full alt" target="_blank" href="${esc(r.download)}">⬇️ Download · डाउनलोड</a>
+    <div class="muted" style="margin-top:8px">To send it on WhatsApp: open it, then use Share in Google Drive.</div>`);
+}
+
+/** Android app: the report file comes back in the reply; open, share or save it on the phone. */
+let rpFile = null;
+function rpFileReady(r, fmt) {
+  const bytes = Uint8Array.from(atob(r.data64), c => c.charCodeAt(0));
+  rpFile = new File([bytes], r.name, { type: r.mime });
+  const url = URL.createObjectURL(rpFile);
+  openModal(`${sheetHead((fmt === 'pdf' ? 'PDF' : 'Excel') + ' ready · तैयार')}
+    <div class="t">${esc(r.name)}</div>
+    <button class="btn full green" onclick="rpShareFile()">Share (WhatsApp, email…) · शेयर</button>
+    <a class="btn full" href="${url}" download="${esc(r.name)}">Download to phone · डाउनलोड</a>
+    <a class="btn full alt" href="${url}" target="_blank">Open · खोलें</a>
+    <div class="muted" style="margin-top:8px">A copy is also saved in the owner's Google Drive, folder "${esc(D.shop.name)} Reports".</div>`);
+}
+async function rpShareFile() {
+  try {
+    if (navigator.canShare && navigator.canShare({ files: [rpFile] })) { await navigator.share({ files: [rpFile], title: rpFile.name }); return; }
+  } catch (e) { if (e && e.name === 'AbortError') return; }
+  toast('Sharing not available here. Use Download, then share from Files.', true);
+}
+
+// ---------- start ----------
+function start() {
+  $('app').setAttribute('data-ok', '1');   // main script is running
+  if (APP && !store.get('sgg_token')) return loginScreen();
+  $('app').innerHTML = '<div class="loading">Loading… / लोड हो रहा है…</div>';
+  setTimeout(() => {
+    if (!D && /Loading/.test($('app').textContent)) $('app').innerHTML = `<div class="card" style="margin-top:20px"><h2>Still loading… · लोड हो रहा है</h2>
+      <div class="muted">The first open after an update can take up to a minute while new columns are added to the sheet.
+        If it stays like this, tap ⟳ or reload the page. Check that Code.gs was pasted completely and Saved.</div>
+      <button class="btn full alt" onclick="start()">Try again · फिर से</button></div>`;
+  }, 40000);
+  return api('getData', null, true).then(d => { D = d; go('home'); }).catch(e => {
+    if (APP && !store.get('sgg_token')) return;   // token expired: login screen already shown
+  $('app').innerHTML = `<div class="card" style="margin-top:20px"><h2 class="low">Could not load / लोड नहीं हुआ</h2>
+    <div>${esc((e && e.message) || e)}</div>
+    <div class="muted" style="margin-top:8px">Check internet and tap ⟳. If it says "Access denied", ask the owner to add your Gmail.
+      If it says a sheet is missing, open Apps Script and run <b>setup</b> once.</div></div>`;
+  });
+}
+start();
+</script>
+
+<script>
+if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+</script>
+</body>
+</html>
