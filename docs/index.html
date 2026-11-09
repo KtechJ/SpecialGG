@@ -1478,10 +1478,19 @@ async function vyView(name) {
     </div>
     <div class="actions">
       <button class="btn sm" onclick="vyPayForm()">\u{1F4B8} Pay / भुगतान</button>
+      <button class="btn sm alt" onclick="vyBillForm()">\u{1F9FE} + Add bill / बिल जोड़ें</button>
       <a class="btn sm green" target="_blank" href="${phoneLink(v.phone, statementText(v))}">\u{1F4E4} Share hisab</a>
       ${v.phone ? `<a class="btn sm alt" href="tel:${esc(v.phone)}">\u{1F4DE} Call</a>` : ''}
       <button class="btn sm alt" onclick="vyForm(V.name)">✏️ ${v.id ? 'Edit' : 'Save to list'}</button>
     </div>
+    ${(v.bills || []).length ? `<h2 style="margin:14px 0 4px">Bills · बिल</h2><div class="card list">
+      ${v.bills.map((b, i) => `<div class="it"><div>
+          <div class="t">${b.invoice ? 'Bill ' + esc(b.invoice) : 'Bill / खरीद'} · ${esc(dmy(b.date))}</div>
+          <div class="s">${esc(b.product)}${b.delivery ? ' · maal aaya ' + esc(dmy(b.delivery)) : ''}${b.note ? ' · ' + esc(b.note) : ''}</div>
+          <div class="s">Amount ${money(b.amount)} · Paid ${money(b.paid)}</div>
+          ${b.canDelete ? `<button class="btn sm red" style="margin-top:4px;padding:4px 8px;font-size:12px" onclick="vyBillDel(${i})">Delete (wrong entry)</button>` : ''}</div>
+        <div class="num">${b.pending > 0.5 ? `<div class="low">${money(b.pending)}</div><div class="s">pending</div>` : '<div class="ok">Paid ✓</div>'}</div></div>`).join('')}
+      </div><h2 style="margin:14px 0 4px">Hisab · हिसाब</h2>` : ''}
     <div class="card list" style="margin-top:12px">
       ${v.rows.map((r, i) => `<div class="it"><div><div class="t" style="font-weight:500">${esc(r.text)}</div>
           <div class="s">${esc(String(r.date).slice(0, 10))} · balance ${money(r.balance)}</div>
@@ -1499,22 +1508,68 @@ function statementText(v) {
   L.push('', `- ${D.shop.owner}`);
   return L.join('\n');
 }
+function vyBillForm() {
+  const v = V;
+  openModal(`${sheetHead('\u{1F9FE} New bill / नया बिल: ' + esc(v.name))}
+    <div class="row"><div><label>Invoice / Bill No · बिल नं.</label><input id="bInv" placeholder="e.g. 1452"></div>
+      <div><label>Invoice date · बिल की तारीख</label><input id="bDate" type="date" value="${D.today}" max="${D.today}"></div></div>
+    <label>Product · माल</label>
+    <select id="bPick" onchange="vyBillPick()"><option value="">✏️ Type product (no stock change) · माल लिखें</option>
+      <optgroup label="Raw material · कच्चा माल (adds stock)">${D.raw.map(r => `<option value="Raw|${esc(r.id)}">${esc(r.name)} (${esc(r.unit)})</option>`).join('')}</optgroup>
+      <optgroup label="Ready items · तैयार माल (adds stock)">${D.items.map(x => `<option value="Item|${esc(x.id)}">${esc(label(x))}</option>`).join('')}</optgroup></select>
+    <input id="bProd" style="margin-top:6px" placeholder="Cotton 2 bori, fabric, foam sheets…">
+    <div class="row"><div id="bQtyBox" class="hidden"><label>Qty · मात्रा <span id="bUnit"></span></label><input id="bQty" type="number" inputmode="decimal"></div>
+      <div><label>Bill amount · बिल की रकम (₹)</label><input id="bAmt" type="number" inputmode="decimal"></div></div>
+    <label>Delivery date (maal aaya) · माल कब आया</label><input id="bDel" type="date" value="${D.today}">
+    <label>Note · नोट</label><input id="bNote" placeholder="optional">
+    <button class="btn full" onclick="doVyBill()">Save bill · बिल सेव करें</button>`);
+}
+function vyBillPick() {
+  const [kind, id] = val('bPick').split('|');
+  $('bQtyBox').classList.toggle('hidden', !id);
+  $('bProd').classList.toggle('hidden', !!id);
+  const r = kind === 'Raw' ? D.raw.find(x => String(x.id) === id) : null;
+  $('bUnit').textContent = r ? '(' + r.unit + ')' : id ? '(pcs)' : '';
+}
+async function doVyBill() {
+  const [kind, id] = val('bPick').split('|');
+  await save('saveVyBill', { supplier: V.name, invoice: val('bInv'), invoiceDate: val('bDate'), product: val('bProd'),
+    kind: kind || '', itemId: id || '', qty: val('bQty'), amount: val('bAmt'), delivery: val('bDel'), note: val('bNote') });
+  await vyView(V.name);
+}
+async function vyBillDel(i) {
+  const b = V.bills[i];
+  if (!confirm(`Delete bill ${b.invoice || ''} (${money(b.amount)})? / यह बिल हटाएं?`)) return;
+  await save('deleteVyBill', { billId: b.billId });
+  await vyView(V.name);
+}
+function vyPaySum() {
+  let t = 0;
+  document.querySelectorAll('.vyb:checked').forEach(c => { t += num(c.dataset.p); });
+  if (document.querySelectorAll('.vyb:checked').length) $('yAmt').value = Math.round(t * 100) / 100;
+}
 function vyPayForm() {
   const v = V;
   openModal(`${sheetHead('Pay / भुगतान: ' + esc(v.name))}
     <div class="total" style="font-size:16px"><span>Pending · बाकी</span><span class="low">${money(v.pending)}</span></div>
+    ${(v.bills || []).some(b => b.pending > 0.5) ? `<label>Paying for which bill? · किस बिल का भुगतान (optional)</label>
+      <div class="card list" style="padding:4px 10px">${v.bills.filter(b => b.pending > 0.5).map(b => `<label style="display:flex;gap:10px;align-items:center;margin:0;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px;color:var(--ink)">
+        <input type="checkbox" class="vyb" style="width:22px;height:22px;flex:0 0 auto" data-id="${esc(b.billId)}" data-p="${b.pending}" onchange="vyPaySum()">
+        <span style="flex:1">${b.invoice ? 'Bill ' + esc(b.invoice) : esc(b.product)} · ${esc(dmy(b.date))}<br><span class="muted">Amount ${money(b.amount)}${b.paid ? ' · paid ' + money(b.paid) : ''}</span></span>
+        <b class="low">${money(b.pending)}</b></label>`).join('')}</div>` : ''}
     <label>Amount · रकम</label><input id="yAmt" type="number" inputmode="decimal">
     ${v.pending > 0 ? `<button class="btn alt sm" style="margin-top:8px" onclick="$('yAmt').value=${v.pending}">Full clear / पूरा हिसाब साफ़ (${money(v.pending)})</button>` : ''}
     <div class="row"><div><label>Mode · तरीका</label>${modeSelect('yMode')}</div>
-      <div><label>UPI / Cheque No · रेफ़रेंस</label><input id="yRef" placeholder="optional"></div></div>
-    <label>Date · तारीख</label><input id="yDate" type="date" value="${D.today}" max="${D.today}">
+      <div><label>UTR / Cheque No · रेफ़रेंस</label><input id="yRef" placeholder="UTR or cheque no."></div></div>
+    <label>Payment date · भुगतान की तारीख</label><input id="yDate" type="date" value="${D.today}" max="${D.today}">
     <label>Note · नोट</label><input id="yNote">
     <button class="btn full" onclick="doVyPay()">Pay & make receipt · रसीद बनाएं</button>`);
 }
 async function doVyPay() {
   const amt = num(val('yAmt'));
   if (amt > V.pending + 0.5 && !confirm(`Amount is more than pending (${money(V.pending)}). Continue? / बाकी से ज़्यादा है, फिर भी?`)) return;
-  const r = await save('savePayment', { partyType: 'Supplier', party: V.name, amount: val('yAmt'), mode: val('yMode'), ref: val('yRef'), date: val('yDate'), note: val('yNote') });
+  const bills = [...document.querySelectorAll('.vyb:checked')].map(c => ({ billId: c.dataset.id, amount: num(c.dataset.p) }));
+  const r = await save('savePayment', { partyType: 'Supplier', party: V.name, amount: val('yAmt'), mode: val('yMode'), ref: val('yRef'), date: val('yDate'), note: val('yNote'), bills });
   if (screen === 'vyapari') vyapari();
   if (r.receipt) showReceipt(r.receipt); else closeModal();
 }
@@ -1582,7 +1637,8 @@ function cardImage(spec) {
 function receiptImage(rc) {
   const cleared = rc.after <= 0.5;
   const rows = [['Receipt No · रसीद नं.', rc.no || '-'], ['Date · तारीख', rc.date], ['Paid to · किसको', rc.party],
-    ['Mode · तरीका', rc.mode + (rc.ref ? '  (Ref ' + rc.ref + ')' : '')]];
+    ['Mode · तरीका', rc.mode], ...(rc.ref ? [[rc.mode === 'Cheque' ? 'Cheque No · चेक नं.' : 'UTR / Ref No', rc.ref]] : [])];
+  if (rc.bills) rows.push(['For bill · बिल', rc.bills]);
   if (rc.note) rows.push(['Note · नोट', rc.note]);
   return cardImage({
     title: 'PAYMENT RECEIPT · भुगतान रसीद', rows,
@@ -1595,7 +1651,8 @@ function receiptImage(rc) {
 }
 function receiptText(rc) {
   return [`*${D.shop.name}* – Payment Receipt / भुगतान रसीद`, `Receipt: ${rc.no}   Date: ${rc.date}`, `Paid to: ${rc.party}`,
-    `*Amount: ${money(rc.amount)}* (${rc.mode}${rc.ref ? ', Ref ' + rc.ref : ''})`, `Previous pending: ${money(rc.before)}`,
+    `*Amount: ${money(rc.amount)}* (${rc.mode}${rc.ref ? ', ' + (rc.mode === 'Cheque' ? 'Cheque No ' : 'UTR ') + rc.ref : ''})`,
+    rc.bills ? `For bill / बिल: ${rc.bills}` : '', `Previous pending: ${money(rc.before)}`,
     `Now pending: ${money(rc.after)}`, rc.after <= 0.5 ? '✅ Account cleared / हिसाब साफ़' : '', `- ${D.shop.owner}`].filter(Boolean).join('\n');
 }
 function showReceipt(rc) {

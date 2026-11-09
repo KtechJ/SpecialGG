@@ -47,7 +47,8 @@ const SCHEMA = {
     ['date', 'Date / तारीख'], ['supplier', 'Supplier / सप्लायर'], ['phone', 'Phone / फ़ोन'], ['kind', 'Kind / प्रकार'],
     ['id', 'Item/Raw ID'], ['name', 'Name / नाम'], ['qty', 'Qty / मात्रा'], ['rate', 'Rate / दाम'],
     ['amount', 'Amount / रकम'], ['paid', 'Paid / दिया'], ['balance', 'Balance / बाकी'], ['by', 'By / किसने'],
-    ['mode', 'Mode / तरीका']
+    ['mode', 'Mode / तरीका'], ['billId', 'Bill ID / बिल ID'], ['invoice', 'Invoice No / बिल नं.'],
+    ['invoiceDate', 'Invoice Date / बिल तारीख'], ['delivery', 'Delivery Date / माल आया'], ['note', 'Note / नोट']
   ],
   Orders: [
     ['no', 'Order No / ऑर्डर'], ['date', 'Date / तारीख'], ['customer', 'Customer / ग्राहक'], ['phone', 'Phone / फ़ोन'],
@@ -64,7 +65,8 @@ const SCHEMA = {
   Payments: [
     ['date', 'Date / तारीख'], ['partyType', 'Party Type / प्रकार'], ['party', 'Name / नाम'],
     ['amount', 'Amount / रकम'], ['mode', 'Mode / तरीका'], ['note', 'Note / नोट'], ['by', 'By / किसने'],
-    ['ref', 'Ref / UPI-Cheque No'], ['id', 'Receipt No / रसीद'], ['orderNo', 'Order No / ऑर्डर']
+    ['ref', 'Ref / UPI-Cheque No'], ['id', 'Receipt No / रसीद'], ['orderNo', 'Order No / ऑर्डर'],
+    ['bills', 'For vyapari bills / किस बिल का']
   ],
   Vyapari: [
     ['id', 'ID'], ['name', 'Name / नाम'], ['phone', 'Phone / फ़ोन'], ['city', 'City / शहर'],
@@ -84,7 +86,7 @@ const SCHEMA = {
 };
 
 // Fields that must be stored as real dates (everything else that is text is stored as plain text).
-const DATE_FIELDS = { delivery: true, date: true };
+const DATE_FIELDS = { delivery: true, date: true, invoiceDate: true };
 
 // Bahi khata categories for manual entries.
 const IN_CATS = ['Opening balance / शुरुआती रकम', 'Other income / अन्य आमदनी', 'Owner added money / मालिक ने डाले', 'Loan taken / उधार लिया'];
@@ -506,7 +508,8 @@ function savePurchase(p) {
     append_('Purchases', {
       date: new Date(), supplier: supplier, phone: str_(p.phone), kind: kind, id: str_(it.id),
       name: kind === 'Item' ? label_(it) : str_(it.name), qty: qty, rate: rate, amount: amount,
-      paid: paid, balance: balance, by: by, mode: mode_(p.mode)
+      paid: paid, balance: balance, by: by, mode: mode_(p.mode), billId: nextNo_('Purchases', 'billId', 'VB'),
+      invoice: str_(p.invoice), invoiceDate: str_(p.invoiceDate), delivery: str_(p.delivery), note: str_(p.note)
     });
     return { msg: 'Purchase saved, stock +' + qty + ' / खरीद सेव हुई' };
   });
@@ -824,10 +827,23 @@ function savePayment(p) {
     const today = fmt_(new Date(), 'yyyy-MM-dd'), d = str_(p.date);
     if (d && d > today) throw new Error('Date cannot be in future / आगे की तारीख नहीं');
     if (partyType === 'Supplier') ensureVyapari_(party, ''); else ensureCustomer_(party, '', '');
+    let bills = '';
+    if (partyType === 'Supplier' && Array.isArray(p.bills) && p.bills.length) {   // which vyapari bills this pays
+      const open = {};
+      vyapariStatement({ name: party }).bills.forEach(function (b) { open[b.billId] = b; });
+      let left = amount;
+      bills = p.bills.map(function (b) {
+        const bill = open[str_(b.billId)];
+        if (!bill) throw new Error('Bill not found / बिल नहीं मिला');
+        const amt = round2_(Math.min(num_(b.amount) || bill.pending, bill.pending, left));
+        left = round2_(left - amt);
+        return amt > 0 ? bill.billId + ':' + amt : '';
+      }).filter(Boolean).join(',');
+    }
     const id = nextNo_('Payments', 'id', 'P');
     append_('Payments', {
       date: (!d || d === today) ? new Date() : d, partyType: partyType, party: party, amount: amount,
-      mode: mode_(p.mode), note: str_(p.note), by: by, ref: str_(p.ref), id: id
+      mode: mode_(p.mode), note: str_(p.note), by: by, ref: str_(p.ref), id: id, bills: bills
     });
     const out = { msg: 'Payment saved / भुगतान सेव हुआ' };
     if (partyType === 'Supplier') {
@@ -1074,26 +1090,51 @@ function saveVyapari(p) {
 
 function dmy_(s) { s = str_(s); return s.length >= 10 ? s.slice(8, 10) + '-' + s.slice(5, 7) + '-' + s.slice(0, 4) : s; }
 
-/** Full hisab of one vyapari: totals and date-wise entries (newest first) with running balance. */
+/** Full hisab of one vyapari: totals, date-wise entries (newest first) with running balance, and bill-wise status. */
 function vyapariStatement(p) {
   guard_();
   const k = key_(p.name);
   const v = readAll_('Vyapari').filter(function (r) { return key_(r.name) === k; })[0] || {};
   let phone = str_(v.phone);
-  const rows = [];
+  const rows = [], bills = [], byBill = {};
   readAll_('Purchases').forEach(function (r) {
     if (key_(r.supplier) !== k) return;
     if (!phone && str_(r.phone)) phone = str_(r.phone);
-    rows.push({ date: str_(r.date), text: 'Maal / खरीद: ' + r.name + ' x' + r.qty + ' @ ₹' + r.rate, debit: num_(r.amount), credit: 0 });
+    const isBill = r.kind === 'Bill';
+    const inv = str_(r.invoice) ? ' ' + r.invoice : '';
+    rows.push({ date: str_(r.date), debit: num_(r.amount), credit: 0,
+      text: (isBill ? 'Bill / बिल' + inv + ': ' + r.name : 'Maal / खरीद' + (inv ? ' (bill' + inv + ')' : '') + ': ' + r.name + ' x' + r.qty + ' @ ₹' + r.rate) +
+        (str_(r.delivery) ? ' · maal aaya ' + dmy_(r.delivery) : '') });
     if (num_(r.paid) > 0) rows.push({ date: str_(r.date), text: 'Paid with purchase / खरीद पर दिया (' + (str_(r.mode) || 'Cash') + ')', debit: 0, credit: num_(r.paid) });
+    const b = { billId: str_(r.billId) || ('ROW' + r._row), invoice: str_(r.invoice), date: str_(r.invoiceDate) || str_(r.date).slice(0, 10),
+      product: str_(r.name) + (isBill ? '' : ' x' + r.qty), amount: num_(r.amount), delivery: str_(r.delivery), note: str_(r.note),
+      paid: num_(r.paid), kind: str_(r.kind), sort: str_(r.date), canDelete: isBill && !!str_(r.billId) };
+    bills.push(b); byBill[b.billId] = b;
   });
+  const free = [];   // payments not tied to a bill: settle old due first, then oldest bills
   readAll_('Payments').forEach(function (r) {
     if (r.partyType !== 'Supplier' || key_(r.party) !== k) return;
+    let tied = 0;
+    const list = str_(r.bills).split(',').filter(Boolean).map(function (t) {
+      const i = t.lastIndexOf(':'), id = t.slice(0, i), amt = num_(t.slice(i + 1));
+      const b = byBill[id];
+      if (b) { b.paid = round2_(b.paid + amt); tied += amt; b.canDelete = false; }
+      return b ? (b.invoice || b.billId) + ' (' + dmy_(b.date) + ', ₹' + b.amount + ')' : '';
+    }).filter(Boolean);
+    if (num_(r.amount) - tied > 0.005) free.push(num_(r.amount) - tied);
     rows.push({
       date: str_(r.date), debit: 0, credit: num_(r.amount),
-      text: 'Payment / भुगतान (' + (str_(r.mode) || 'Cash') + ')' + (str_(r.ref) ? ' Ref ' + r.ref : '') + (str_(r.note) ? ' · ' + r.note : ''),
-      pay: { no: str_(r.id), mode: str_(r.mode) || 'Cash', ref: str_(r.ref), note: str_(r.note), amount: num_(r.amount) }
+      text: 'Payment / भुगतान (' + (str_(r.mode) || 'Cash') + ')' + (str_(r.ref) ? ' Ref ' + r.ref : '') +
+        (list.length ? ' · for bill ' + list.join(', ') : '') + (str_(r.note) ? ' · ' + r.note : ''),
+      pay: { no: str_(r.id), mode: str_(r.mode) || 'Cash', ref: str_(r.ref), note: str_(r.note), amount: num_(r.amount), bills: list.join(', ') }
     });
+  });
+  let pool = free.reduce(function (a, x) { return a + x; }, 0) - num_(v.opening);
+  bills.sort(function (a, b) { return a.sort.localeCompare(b.sort); }).forEach(function (b) {
+    const need = round2_(b.amount - b.paid);
+    if (pool > 0 && need > 0) { const use = Math.min(pool, need); b.paid = round2_(b.paid + use); pool -= use; }
+    b.pending = round2_(Math.max(0, b.amount - b.paid));
+    delete b.sort;
   });
   rows.sort(function (a, b) { return a.date.localeCompare(b.date); });
   const name = str_(v.name) || str_(p.name);
@@ -1105,14 +1146,58 @@ function vyapariStatement(p) {
     purchased += r.debit; paid += r.credit;
     if (r.pay) {
       r.receipt = { no: r.pay.no, date: dmy_(r.date), party: name, phone: phone, amount: r.pay.amount, mode: r.pay.mode,
-        ref: r.pay.ref, note: r.pay.note, before: round2_(before), after: bal };
+        ref: r.pay.ref, note: r.pay.note, bills: r.pay.bills, before: round2_(before), after: bal };
       delete r.pay;
     }
   });
   return {
     name: name, id: str_(v.id), phone: phone, city: str_(v.city), note: str_(v.note), opening: num_(v.opening),
-    purchased: round2_(purchased), paid: round2_(paid), pending: bal, rows: rows.reverse()
+    purchased: round2_(purchased), paid: round2_(paid), pending: bal, rows: rows.reverse(), bills: bills.reverse()
   };
+}
+
+/** A vyapari's bill (invoice): money owed for maal or work. Picking a stock item / raw material also adds stock. */
+function saveVyBill(p) {
+  return run_(function (by) {
+    const supplier = str_(p.supplier), amount = num_(p.amount);
+    if (!supplier) throw new Error('Vyapari name needed / व्यापारी का नाम ज़रूरी');
+    if (amount <= 0) throw new Error('Enter bill amount / बिल की रकम डालें');
+    const today = fmt_(new Date(), 'yyyy-MM-dd'), inv = str_(p.invoiceDate);
+    if (inv && inv > today) throw new Error('Invoice date cannot be in future / आगे की तारीख नहीं');
+    ensureVyapari_(supplier, '');
+    let kind = 'Bill', id = '', name = str_(p.product), qty = num_(p.qty) || 1;
+    if (str_(p.itemId) && (p.kind === 'Item' || p.kind === 'Raw')) {   // also adds stock
+      const sheet = p.kind === 'Item' ? 'Items' : 'RawMaterial';
+      const it = byId_(readAll_(sheet))[str_(p.itemId)];
+      if (!it) throw new Error('Item not found');
+      if (num_(p.qty) <= 0) throw new Error('Enter quantity / मात्रा डालें');
+      kind = p.kind; id = str_(it.id); name = p.kind === 'Item' ? label_(it) : str_(it.name);
+      setField_(sheet, it._row, 'stock', round2_(num_(it.stock) + qty));
+      setField_(sheet, it._row, p.kind === 'Item' ? 'cost' : 'rate', round2_(amount / qty));
+    }
+    if (!name) throw new Error('Write the product / माल लिखें');
+    const billId = nextNo_('Purchases', 'billId', 'VB');
+    append_('Purchases', {
+      date: (!inv || inv === today) ? new Date() : inv, supplier: supplier, phone: '', kind: kind, id: id, name: name,
+      qty: qty, rate: round2_(amount / qty), amount: amount, paid: 0, balance: amount, by: by, mode: '',
+      billId: billId, invoice: str_(p.invoice), invoiceDate: inv || today, delivery: str_(p.delivery), note: str_(p.note)
+    });
+    return { msg: 'Bill saved / बिल सेव हुआ' + (str_(p.invoice) ? ': ' + str_(p.invoice) : ''), billId: billId };
+  });
+}
+
+/** Wrong entry: removes a vyapari bill (only one added with "+ Add bill", with no payment tied to it). */
+function deleteVyBill(p) {
+  return run_(function (by) {
+    const r = readAll_('Purchases').filter(function (x) { return str_(x.billId) === str_(p.billId); })[0];
+    if (!r) throw new Error('Bill not found');
+    if (r.kind !== 'Bill') throw new Error('This bill added stock. Fix it in the Purchases tab and correct the stock / यह खरीद है');
+    const tied = readAll_('Payments').some(function (x) { return str_(x.bills).split(',').some(function (t) { return t.split(':')[0] === str_(r.billId); }); });
+    if (tied) throw new Error('A payment is linked to this bill / इस बिल का भुगतान हो चुका है');
+    keepDeleted_(by, 'Vyapari bill', str_(r.invoice) || str_(r.billId), r);
+    sh_('Purchases').deleteRow(r._row);
+    return { msg: 'Bill deleted / बिल हटाया' };
+  });
 }
 
 // ===================== Customers (grahak database) =====================
@@ -1675,7 +1760,7 @@ const MAX_FAILS_ALL = 30;                // all people together, per hour → lo
 const API_FNS = ['getData', 'saveSale', 'savePurchase', 'makeGadi', 'makeForOrder', 'saveRecipe', 'saveOrder',
   'setOrderStatus', 'deliverOrder', 'savePayment', 'adjustStock', 'saveItem', 'saveRaw', 'getBahi', 'saveCashEntry',
   'deleteCashEntry', 'saveVyapari', 'vyapariStatement', 'saveCustomer', 'customerProfile', 'saveOrderPayment',
-  'getReport', 'exportReport', 'deleteSale', 'deleteOrder', 'partyHistory', 'updateOrder'];
+  'getReport', 'exportReport', 'deleteSale', 'deleteOrder', 'partyHistory', 'updateOrder', 'saveVyBill', 'deleteVyBill'];
 
 function doPost(e) {
   let out;
