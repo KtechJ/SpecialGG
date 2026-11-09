@@ -1511,6 +1511,7 @@ async function doVy(id) {
 }
 async function vyView(name) {
   V = await api('vyapariStatement', { name });
+  if (screen === 'vyapari' && $('vyList')) vyapari();   // keep the list and totals behind the window up to date
   const v = V;
   openModal(`${sheetHead('\u{1F3EA} ' + esc(v.name))}
     <div class="muted">${[v.city, v.phone].filter(Boolean).map(esc).join(' · ')}</div>
