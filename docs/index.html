@@ -515,6 +515,28 @@ function stockList() {
         : `<div class="num ${isLow(x) ? 'low' : 'ok'}" style="font-size:20px">${num(x.stock)}<div class="s">${isItem ? 'pcs' : esc(x.unit)}</div></div>`}
     </div>`).join('') : '<div class="muted">Nothing found / कुछ नहीं मिला</div>';
 }
+/** Edit form: stock in hand (editable) + quick "add stock" box. */
+function stockFields(x, unit, dec) {
+  const mode = dec ? 'decimal' : 'numeric';
+  return `<div class="row"><div><label>Stock in hand · अभी स्टॉक (${esc(unit)})</label>
+      <input id="fStockNow" type="number" inputmode="${mode}" value="${num(x.stock)}" data-old="${num(x.stock)}"></div>
+    <div><label>+ Add stock · स्टॉक जोड़ें</label>
+      <input id="fStockAdd" type="number" inputmode="${mode}" placeholder="0"></div></div>
+    <div class="muted" style="margin:-4px 0 8px">Bought it? Use Purchase so the bill and vyapari dues are recorded. · खरीदा है तो Purchase से डालें।</div>`;
+}
+/** After saving an Edit form: if stock was changed or added, save the new count (logged in StockLog). */
+async function saveStockFields(kind, id) {
+  const box = $('fStockNow');
+  if (!box) return;
+  const old = Number(box.dataset.old) || 0;
+  const now = val('fStockNow') === '' ? old : Number(val('fStockNow'));
+  const add = Number(val('fStockAdd')) || 0;
+  const total = Math.round((now + add) * 1000) / 1000;
+  if (!isFinite(total) || Math.abs(total - old) < 0.0005) return;
+  if (total < 0) { toast('Stock cannot be minus / स्टॉक माइनस नहीं हो सकता', true); return; }
+  const note = add ? `Added ${add} from Edit` + (Math.abs(now - old) >= 0.0005 ? `, set ${old} → ${now}` : '') : `Set from Edit (${old} → ${now})`;
+  await save('adjustStock', { kind, id, stock: total, note });
+}
 function itemForm(id) {
   const x = id ? itemById(id) : { type: 'Gadi', made: 'Yes' };
   openModal(`${sheetHead(id ? 'Edit item / आइटम बदलें' : 'New item / नया आइटम')}
@@ -530,12 +552,13 @@ function itemForm(id) {
     <label>Count stock for this item? · स्टॉक गिनें?</label>
     <select id="fTrack"><option value="Yes" ${tracked(x) ? 'selected' : ''}>Yes – keep stock count · हाँ</option>
       <option value="No" ${!tracked(x) ? 'selected' : ''}>No – small item, don't count · नहीं</option></select>
-    ${id ? '' : `<label>Opening stock · शुरुआती स्टॉक</label><input id="fStock" type="number" inputmode="numeric" value="0">`}
+    ${id ? (tracked(x) ? stockFields(x, 'pcs', false) : '') : `<label>Opening stock · शुरुआती स्टॉक</label><input id="fStock" type="number" inputmode="numeric" value="0">`}
     <button class="btn full" onclick="saveItemForm('${esc(id || '')}')">Save · सेव करें</button>`);
 }
 async function saveItemForm(id) {
   await save('saveItem', { id, name: val('fName'), type: val('fType'), size: val('fSize'), material: val('fMat'), thickness: val('fThick'),
     cost: val('fCost'), price: val('fPrice'), low: val('fLow'), made: val('fMade'), track: val('fTrack'), stock: val('fStock') });
+  if (id) await saveStockFields('Item', id);
   closeModal(); render();
 }
 function rawForm(id) {
@@ -545,11 +568,12 @@ function rawForm(id) {
     <div class="row"><div><label>Unit · इकाई</label><input id="fUnit" value="${esc(x.unit)}" placeholder="kg / meter"></div>
       <div><label>Rate per unit · दाम</label><input id="fRate" type="number" inputmode="decimal" value="${esc(x.rate)}"></div></div>
     <label>Low alert · कम स्टॉक</label><input id="fLow" type="number" inputmode="decimal" value="${esc(x.low || 0)}">
-    ${id ? '' : `<label>Opening stock · शुरुआती स्टॉक</label><input id="fStock" type="number" inputmode="decimal" value="0">`}
+    ${id ? stockFields(x, x.unit || '', true) : `<label>Opening stock · शुरुआती स्टॉक</label><input id="fStock" type="number" inputmode="decimal" value="0">`}
     <button class="btn full" onclick="saveRawForm('${esc(id || '')}')">Save · सेव करें</button>`);
 }
 async function saveRawForm(id) {
   await save('saveRaw', { id, name: val('fName'), unit: val('fUnit'), rate: val('fRate'), low: val('fLow'), stock: val('fStock') });
+  if (id) await saveStockFields('Raw', id);
   closeModal(); render();
 }
 function adjustForm(kind, id) {
