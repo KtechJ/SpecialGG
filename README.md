@@ -21,8 +21,8 @@ Labels are in English with Hindi.
 
 ## Android app
 
-The `app/` folder is an installable Android app (own icon, full screen, PIN login per person) that uses the same
-Google Sheet. See [`app/README.md`](app/README.md) for setup. Rebuild it after changing `Index.html` with
+The `docs/` folder is an installable Android app (own icon, full screen, PIN login per person) that uses the same
+Google Sheet. It is served by GitHub Pages from `docs/`. See [`docs/README.md`](docs/README.md) for setup. Rebuild it after changing `Index.html` with
 `python3 tools/build_app.py`.
 
 ## Setup from scratch (about 15 minutes)

@@ -1,14 +1,14 @@
 """Builds the installable Android app (a PWA for GitHub Pages) from Index.html.
 
-Usage:  python3 tools/build_app.py            -> writes mattress-shop/app/
-The app/ folder is what goes into the public GitHub repo. Only config.js needs the Apps Script URL.
+Usage:  python3 tools/build_app.py            -> writes docs/
+The docs/ folder is what GitHub Pages serves (Settings -> Pages -> Branch: main, /docs). Only config.js needs the Apps Script URL.
 """
 import json, os, re, sys
 from PIL import Image, ImageDraw, ImageFont
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-OUT = os.path.join(ROOT, 'app')
+OUT = os.path.join(ROOT, 'docs')
 os.makedirs(OUT, exist_ok=True)
 
 NAME, SHORT, COLOR, BG = 'Special Gadi Ghar', 'Gadi Ghar', '#1f4e79', '#f4f1ea'

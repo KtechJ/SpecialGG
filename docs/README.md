@@ -42,10 +42,10 @@ Keep the existing deployment as it is. Make a new one:
 in a browser shows "Access denied", which is correct.)
 
 ### 4. Put the app on GitHub Pages
-1. Put these files at the top level of the public repository: `index.html`, `config.js`, `manifest.webmanifest`,
-   `sw.js`, `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`.
-2. Open `config.js` on GitHub (✏️ edit) and paste the Web app URL from step 3 in place of `PASTE_APPS_SCRIPT_URL_HERE`. Commit.
-3. Repository **Settings → Pages → Build and deployment → Source: Deploy from a branch → Branch: main, / (root) → Save**.
+1. The app files are already in this repository's `docs/` folder (`index.html`, `config.js`, `manifest.webmanifest`,
+   `sw.js` and the icons). The repository must be public for free GitHub Pages.
+2. Open `docs/config.js` on GitHub (✏️ edit) and paste the Web app URL from step 3 in place of `PASTE_APPS_SCRIPT_URL_HERE`. Commit.
+3. Repository **Settings → Pages → Build and deployment → Source: Deploy from a branch → Branch: main, folder /docs → Save**.
 4. After about a minute the app is live at `https://<github-username>.github.io/<repository-name>/`.
 
 ### 5. Install on each Android phone
@@ -61,7 +61,7 @@ in a browser shows "Access denied", which is correct.)
 ## Updating later
 - **Code.gs changed:** paste it, Save, then **Deploy → Manage deployments → ✏️ on "Android app" → Version: New version → Deploy**.
   The URL stays the same, so `config.js` doesn't change. (Do the same for the old Google-login deployment if you still use it.)
-- **Screens changed (Index.html):** run `python3 tools/build_app.py` and copy the new `index.html` into this repository.
+- **Screens changed (Index.html):** run `python3 tools/build_app.py` (it rewrites `docs/`), then commit and push.
   Phones pick up the new version the next time the app is opened with internet.
 
 ## If something goes wrong
