@@ -821,9 +821,10 @@ function orderParts(details) {
   const d = String(details || ''), n = re => { const m = d.match(re); return m ? Number(m[1].replace(/,/g, '')) : 0; };
   if (d.indexOf(' | ') < 0 || (d.indexOf(CALC_RUI) < 0 && d.indexOf(CALC_KAP) < 0 && d.indexOf(CALC_LAB) < 0)) return null;
   const ps = d.split(' | '), head = ps[0], qm = head.match(/^(\d+) x (.*)$/);
-  const known = t => t.indexOf(CALC_RUI + ':') === 0 || t.indexOf(CALC_KAP + ':') === 0 || t.indexOf(CALC_LAB + ':') === 0;
+  const known = t => t.indexOf(CALC_RUI + ':') === 0 || t.indexOf(CALC_RUI + ' (') === 0 || t.indexOf(CALC_KAP + ':') === 0 || t.indexOf(CALC_LAB + ':') === 0;
   const EXP = /^(.+?): ₹([\d.,]+)$/, rest = ps.slice(1).filter(t => !known(t));
-  return { kg: n(/Rui\/Kapas[^:]*: ([\d.,]+) kg/), kgRate: n(/ kg × ₹([\d.,]+)/), m: n(/Kapda[^:]*: ([\d.,]+) m/),
+  const rt = d.match(/Rui\/Kapas · रुई \(([^)]+)\):/);
+  return { ruiType: rt ? rt[1] : '', kg: n(/Rui\/Kapas[^:]*: ([\d.,]+) kg/), kgRate: n(/ kg × ₹([\d.,]+)/), m: n(/Kapda[^:]*: ([\d.,]+) m/),
     mRate: n(/ m × ₹([\d.,]+)/), labour: n(/Labour[^:]*: ₹([\d.,]+)/),
     exp: rest.filter(t => EXP.test(t)).map(t => { const m = t.match(EXP); return { name: m[1], amt: Number(m[2].replace(/,/g, '')) }; }),
     qty: qm ? Number(qm[1]) : 1, what: qm ? qm[2] : head, extra: rest.filter(t => !EXP.test(t)).join(' | ') };
@@ -885,6 +886,13 @@ function stdBlock() {
     <div class="muted" style="margin-top:4px">A typed (custom) name is added to your item list with its rate, so next time you can pick it.</div>
     <label>Weight each (kg) · वज़न (optional)</label><input id="oWt" type="number" inputmode="decimal" placeholder="10">`;
 }
+// Rui / Kapas types come from the Items tab (names with Rui / Kapas), using their sell price per kg.
+const ruiItems = () => D.items.filter(x => /(^|[^a-z])(rui|kapas)([^a-z]|$)|रुई|कपास/i.test(x.name));
+function ruiPick(id) {
+  const it = itemById(id);
+  if (it && num(it.price)) $('oRuiRate').value = num(it.price);
+  orderAmtTouched = false; orderCalc();
+}
 function calcBlock(v) {
   v = v || {};
   const f = x => (x === undefined || x === null || x === 0 || x === '0') ? '' : esc(x);
@@ -893,6 +901,9 @@ function calcBlock(v) {
         <div><label>What to make · क्या बनाना है</label><input id="oCWhat" value="${f(v.what)}" placeholder="Gadi / गादी"></div>
         <div style="flex:0 0 90px"><label>Pieces · कितने</label><input id="oCQty" type="number" inputmode="numeric" value="${esc(v.qty || 1)}"></div>
       </div>
+      ${ruiItems().length ? `<label>Rui type · रुई का प्रकार</label>
+      <select id="oRuiType" onchange="ruiPick(this.value)"><option value="">— Choose Rui · रुई चुनें —</option>${ruiItems().map(x =>
+        `<option value="${esc(x.id)}" ${v.ruiType && label(x).toLowerCase() === String(v.ruiType).toLowerCase() ? 'selected' : ''}>${esc(label(x))}${num(x.price) ? ' · ' + money(x.price) + '/kg' : ''}</option>`).join('')}</select>` : ''}
       <div class="row">
         <div><label>Rui / Kapas (kg) · रुई</label><input id="oRuiKg" type="number" inputmode="decimal" value="${f(v.kg)}" placeholder="7" oninput="orderCalc()"></div>
         <div><label>Price per kg · ₹/kg</label><input id="oRuiRate" type="number" inputmode="decimal" value="${f(v.kgRate)}" placeholder="350" oninput="orderCalc()"></div>
@@ -983,7 +994,8 @@ function calcOrderData() {
   if (!kg && !m && !a.lab) { toast('Enter Rui, Kapda or Labour too / रुई, कपड़ा या मजदूरी भी लिखें', true); return null; }
   const what = val('oCWhat') || 'Gadi / गादी';
   const parts = [(qty > 1 ? qty + ' x ' : '') + what];
-  if (kg) parts.push(`${CALC_RUI}: ${kg} kg × ₹${kgRate} = ${money(a.rui)}`);
+  const rType = $('oRuiType') && val('oRuiType') ? label(itemById(val('oRuiType'))).replace(/[|:()]/g, ' ').replace(/\s+/g, ' ').trim() : '';
+  if (kg) parts.push(`${CALC_RUI}${rType ? ` (${rType})` : ''}: ${kg} kg × ₹${kgRate} = ${money(a.rui)}`);
   if (m) parts.push(`${CALC_KAP}: ${m} m × ₹${mRate} = ${money(a.kap)}`);
   if (a.lab) parts.push(`${CALC_LAB}: ${money(a.lab)}`);
   oExp.filter(e => num(e.amt) > 0).forEach(e => parts.push(`${String(e.name || 'Other expense / और खर्च').replace(/\s*[|:]\s*/g, ' - ').trim()}: ${money(num(e.amt))}`));
