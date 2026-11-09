@@ -440,7 +440,7 @@ function saveSale(p) {
     if (!lines.length) throw new Error('Add at least one item / कम से कम एक आइटम डालें');
     const added = [];
     lines.forEach(function (l) {
-      if (str_(l.id)) return;
+      if (str_(l.id) || l.oneoff) return;   // oneoff: a made-to-measure gadi (Rui + Kapda + Labour), not an item
       const r = ensureItem_(l.name, { price: num_(l.price), cost: num_(l.cost), made: 'No', track: 'No' });
       l.id = r.id;
       if (r.created) added.push(str_(l.name));
@@ -448,6 +448,7 @@ function saveSale(p) {
     const items = byId_(readAll_('Items'));
     const need = {};
     lines.forEach(function (l) {
+      if (!str_(l.id) && l.oneoff) return;
       if (!items[str_(l.id)]) throw new Error('Item not found / आइटम नहीं मिला: ' + l.id);
       if (!tracked_(items[str_(l.id)])) return;
       need[str_(l.id)] = (need[str_(l.id)] || 0) + num_(l.qty);
@@ -464,7 +465,7 @@ function saveSale(p) {
     lines.forEach(function (l) {
       const it = str_(l.id) ? items[str_(l.id)] : null, q = num_(l.qty), pr = num_(l.price);
       total += q * pr;
-      cost += q * (num_(it.cost) || num_(l.cost));
+      cost += q * ((it ? num_(it.cost) : 0) || num_(l.cost));
       billLines.push({ name: it ? label_(it) : str_(l.name), qty: q, price: pr });
     });
     const discount = num_(p.discount), net = total - discount, paid = num_(p.paid), balance = net - paid;
@@ -803,14 +804,17 @@ function deliverOrder(p) {
 /** Bill lines for a delivered order. Several-item orders are stored as "2 x Pillow @ ₹200 = ₹400 | ...". */
 function orderBillLines_(o, net) {
   const re = /^([\d.]+) x (.+?) @ ₹([\d,.]+)/;
-  const parts = str_(o.details).split(' | '), lines = [];
+  const parts = str_(o.details).split(' | '), lines = [], other = [];
   parts.forEach(function (t) {
     const m = t.match(re);
     if (m) lines.push({ name: m[2], qty: Number(m[1]), price: Number(m[3].replace(/,/g, '')) });
+    else other.push(t);
   });
-  if (lines.length > 1) {
+  const calc = /Rui\/Kapas|Kapda · |Labour · /.test(str_(o.details));   // Rui + Kapda + Labour order with extra items
+  if (lines.length > 1 || (calc && lines.length)) {
     const sum = lines.reduce(function (a, l) { return a + l.qty * l.price; }, 0);
-    if (Math.abs(sum - net) > 0.01) lines.push({ name: 'Adjustment / बदलाव', qty: 1, price: round2_(net - sum) });
+    if (calc) lines.unshift({ name: other.join(' | '), qty: 1, price: round2_(net - sum) });
+    else if (Math.abs(sum - net) > 0.01) lines.push({ name: 'Adjustment / बदलाव', qty: 1, price: round2_(net - sum) });
     return lines;
   }
   return (num_(o.qty) > 1 && Math.abs(num_(o.qty) * num_(o.rate) - net) < 0.01)

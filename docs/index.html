@@ -341,7 +341,15 @@ function sale() {
   $('app').innerHTML = `
     <div class="card">
       <h2>Items · सामान</h2>
-      <div id="lines">${saleLines.map((l, i) => `
+      <div id="lines">${saleLines.map((l, i) => l.oneoff ? `
+        <div class="line">
+          <div class="t">\u{1F9F5} ${String(l.name).split(' | ').map(esc).join('<br><span class="muted">') + (String(l.name).includes(' | ') ? '</span>' : '')}</div>
+          <div class="row">
+            <div><label>Pieces · कितने</label><input type="number" inputmode="numeric" min="1" value="${esc(l.qty)}" oninput="saleLines[${i}].qty=this.value;saleTotals()"></div>
+            <div><label>Price each · दाम</label><input type="number" inputmode="decimal" value="${esc(l.price)}" oninput="saleLines[${i}].price=this.value;saleTotals()"></div>
+            <button class="btn sm red" style="flex:0" onclick="saleLines.splice(${i},1);if(!saleLines.length)saleLines.push({id:'',qty:1,price:''});sale()">✕</button>
+          </div>
+        </div>` : `
         <div class="line">
           <select onchange="lineItem(${i}, this.value)">
             <option value="">— Select item / आइटम चुनें —</option>
@@ -360,6 +368,7 @@ function sale() {
         </div>`).join('')}
       </div>
       <button class="btn alt sm" onclick="saleLines.push({id:'',qty:1,price:''});sale()">+ Add item / और आइटम</button>
+      <button class="btn alt sm" onclick="saleGadiForm()">\u{1F9F5} + Add Gadi (Rui + Kapda + Labour)</button>
     </div>
     <div class="card">
       <h2>Customer · ग्राहक</h2>
@@ -381,6 +390,25 @@ function sale() {
     </div>`;
   if (f.phone) lookupClient('sPhone', 'sCust', 'sChip');
   saleTotals();
+}
+/** New Sale: a made-to-measure gadi from Rui + Kapda + Labour, added to the bill as one line (not added to the item list). */
+function saleGadiForm() {
+  saleKeep();
+  orderMode = 'calc'; orderAmtTouched = false; oExp = []; oCItems = [];
+  openModal(`${sheetHead('\u{1F9F5} Gadi · Rui + Kapda + Labour')}
+    ${calcBlock({ noItems: true, kgRate: store.get('sgg_rate_rui') || '', mRate: store.get('sgg_rate_kapda') || '' })}
+    <label>Size / other details · साइज़ / और जानकारी</label><input id="oExtra" placeholder="6x5 ft, 5 inch">
+    <label>Total · कुल</label><input id="oAmt" type="number" inputmode="decimal" oninput="orderAmtTouched=true">
+    <span id="oLeft" class="hidden"></span><input id="oAdv" type="hidden" value="0">
+    <button class="btn full" onclick="saleGadiAdd()">Add to bill · बिल में जोड़ें</button>`);
+  drawOExp();
+}
+function saleGadiAdd() {
+  const c = calcOrderData();
+  if (!c) return;
+  saleLines = saleLines.filter(l => l.id || l.custom || l.oneoff);
+  saleLines.push({ oneoff: true, name: c.details.replace(/^\d+ x /, ''), qty: c.qty, price: c.rate, cost: '' });
+  closeModal(); sale();
 }
 function lineItem(i, id) {
   const l = saleLines[i];
@@ -431,7 +459,8 @@ function fillPhone(nameId, phoneId) {
 async function doSale(allowShort) {
   const bad = saleLines.find(l => l.custom && !String(l.name || '').trim() && num(l.qty) > 0);
   if (bad) { toast('Write the item name / आइटम का नाम लिखें', true); return; }
-  const args = { lines: saleLines.map(l => l.custom ? { name: l.name, qty: l.qty, price: l.price, cost: l.cost } : { id: l.id, qty: l.qty, price: l.price }),
+  const args = { lines: saleLines.map(l => l.oneoff ? { name: l.name, qty: l.qty, price: l.price, cost: l.cost, oneoff: true }
+      : l.custom ? { name: l.name, qty: l.qty, price: l.price, cost: l.cost } : { id: l.id, qty: l.qty, price: l.price }),
     customer: val('sCust'), phone: val('sPhone'), discount: val('sDisc'), paid: val('sPaid'), mode: val('sMode'), allowShort: !!allowShort };
   let r;
   try { r = await save('saveSale', args, true); }
@@ -827,45 +856,55 @@ function orderParts(details) {
   if (d.indexOf(' | ') < 0 || (d.indexOf(CALC_RUI) < 0 && d.indexOf(CALC_KAP) < 0 && d.indexOf(CALC_LAB) < 0)) return null;
   const ps = d.split(' | '), head = ps[0], qm = head.match(/^(\d+) x (.*)$/);
   const known = t => t.indexOf(CALC_RUI + ':') === 0 || t.indexOf(CALC_RUI + ' (') === 0 || t.indexOf(CALC_KAP + ':') === 0 || t.indexOf(CALC_KAP + ' (') === 0 || t.indexOf(CALC_LAB + ':') === 0;
-  const EXP = /^(.+?): ₹([\d.,]+)$/, rest = ps.slice(1).filter(t => !known(t));
+  const EXP = /^(.+?): ₹([\d.,]+)$/, rest = ps.slice(1).filter(t => !known(t) && !LINE_RE.test(t));
+  const its = ps.slice(1).filter(t => LINE_RE.test(t)).map(t => { const m = t.match(LINE_RE), it = D.items.find(x => label(x).toLowerCase() === m[2].toLowerCase());
+    return { id: it ? String(it.id) : '', name: m[2], qty: Number(m[1]), rate: Number(m[3].replace(/,/g, '')) }; });
   const rt = d.match(/Rui\/Kapas · रुई \(([^)]+)\):/), kt = d.match(/Kapda · कपड़ा \(([^)]+)\):/);
   return { ruiType: rt ? rt[1] : '', kapType: kt ? kt[1] : '', kg: n(/Rui\/Kapas[^:]*: ([\d.,]+) kg/), kgRate: n(/ kg × ₹([\d.,]+)/), m: n(/Kapda[^:]*: ([\d.,]+) m/),
     mRate: n(/ m × ₹([\d.,]+)/), labour: n(/Labour[^:]*: ₹([\d.,]+)/),
     exp: rest.filter(t => EXP.test(t)).map(t => { const m = t.match(EXP); return { name: m[1], amt: Number(m[2].replace(/,/g, '')) }; }),
-    qty: qm ? Number(qm[1]) : 1, what: qm ? qm[2] : head, extra: rest.filter(t => !EXP.test(t)).join(' | ') };
+    items: its, qty: qm ? Number(qm[1]) : 1, what: qm ? qm[2] : head, extra: rest.filter(t => !EXP.test(t)).join(' | ') };
 }
 // Several-item orders: "2 x Pillow @ ₹200 = ₹400 | 1 x Gadi @ ₹2,200 = ₹2,200 | extra"
 const LINE_RE = /^([\d.]+) x (.+?) @ ₹([\d,.]+)/;
 function orderLinesOf(details) {
   const ps = String(details || '').split(' | '), lines = ps.filter(t => LINE_RE.test(t));
-  if (lines.length < 2) return null;
+  if (lines.length < (orderParts(details) ? 1 : 2)) return null;
   return { lines: lines.map(t => { const m = t.match(LINE_RE), it = D.items.find(x => label(x).toLowerCase() === m[2].toLowerCase());
       return { id: it ? String(it.id) : '', name: m[2], qty: Number(m[1]), rate: Number(m[3].replace(/,/g, '')) }; }),
     extra: ps.filter(t => !LINE_RE.test(t)).join(' | ') };
 }
-let oExp = [], oLines = [];
+let oExp = [], oLines = [], oCItems = [];
 function drawOExp() {
   $('oExpList').innerHTML = oExp.map((e, i) => `<div class="row" style="align-items:flex-end">
       <div><label>Other expense · और खर्च</label><input value="${esc(e.name)}" placeholder="Cover silai / transport" oninput="oExp[${i}].name=this.value"></div>
       <div style="flex:0 0 110px"><label>₹</label><input type="number" inputmode="decimal" value="${e.amt === '' ? '' : esc(e.amt)}" oninput="oExp[${i}].amt=this.value;orderAmtTouched=false;orderCalc()"></div>
       <button class="btn sm red" style="flex:0 0 auto;margin-bottom:2px" onclick="oExp.splice(${i},1);drawOExp();orderAmtTouched=false;orderCalc()">×</button></div>`).join('');
 }
-function drawOLines() {
-  $('oLines').innerHTML = oLines.map((l, i) => `<div style="border:1px solid var(--line);border-radius:10px;padding:8px;margin:6px 0;background:#fff">
-      <div class="row"><select onchange="oLinePick(${i}, this.value)"><option value="">✏️ Custom – type name · अपनी मर्ज़ी का</option>${opts(D.items, l.id, x => label(x))}</select>
-        ${oLines.length > 1 ? `<button class="btn sm red" style="flex:0 0 auto" onclick="oLines.splice(${i},1);drawOLines();orderAmtTouched=false;orderCalc()">×</button>` : ''}</div>
-      ${l.id ? '' : `<input style="margin-top:6px" value="${esc(l.name)}" placeholder="What to make · क्या बनाना है" oninput="oLines[${i}].name=this.value">`}
+// Item rows: oLines = "Item x Qty" order, oCItems = extra items in a Rui + Kapda order (minRows 0)
+const ROWS = { oLines: { box: 'oLines', min: 1 }, oCItems: { box: 'oCItemsBox', min: 0 } };
+function drawOLines() { drawRows('oLines'); }
+function drawRows(name) {
+  const arr = rowList(name), box = $(ROWS[name].box);
+  if (!box) return;
+  box.innerHTML = arr.map((l, i) => `<div style="border:1px solid var(--line);border-radius:10px;padding:8px;margin:6px 0;background:#fff">
+      <div class="row"><select onchange="rowPick('${name}', ${i}, this.value)"><option value="">✏️ Custom – type name · अपनी मर्ज़ी का</option>${opts(D.items, l.id, x => label(x))}</select>
+        ${arr.length > ROWS[name].min ? `<button class="btn sm red" style="flex:0 0 auto" onclick="rowList('${name}').splice(${i},1);drawRows('${name}');orderAmtTouched=false;orderCalc()">×</button>` : ''}</div>
+      ${l.id ? '' : `<input style="margin-top:6px" value="${esc(l.name)}" placeholder="Item name · क्या है" oninput="rowList('${name}')[${i}].name=this.value">`}
       <div class="row" style="align-items:flex-end">
-        <div><label>Qty · कितने</label><input type="number" inputmode="numeric" value="${esc(l.qty)}" oninput="oLines[${i}].qty=this.value;orderAmtTouched=false;orderCalc()"></div>
-        <div><label>Rate each · दाम</label><input type="number" inputmode="decimal" value="${l.rate === '' ? '' : esc(l.rate)}" oninput="oLines[${i}].rate=this.value;orderAmtTouched=false;orderCalc()"></div>
-        <div style="text-align:right"><label>Amount</label><div class="t" id="oLA${i}" style="padding:10px 0">${money(num(l.qty) * num(l.rate))}</div></div>
+        <div><label>Qty · कितने</label><input type="number" inputmode="numeric" value="${esc(l.qty)}" oninput="rowList('${name}')[${i}].qty=this.value;orderAmtTouched=false;orderCalc()"></div>
+        <div><label>Rate each · दाम</label><input type="number" inputmode="decimal" value="${l.rate === '' ? '' : esc(l.rate)}" oninput="rowList('${name}')[${i}].rate=this.value;orderAmtTouched=false;orderCalc()"></div>
+        <div style="text-align:right"><label>Amount</label><div class="t" id="${name}A${i}" style="padding:10px 0">${money(num(l.qty) * num(l.rate))}</div></div>
       </div></div>`).join('');
 }
-function oLinePick(i, id) {
-  const it = itemById(id), l = oLines[i];
+const rowList = name => name === 'oLines' ? oLines : oCItems;
+function rowPick(name, i, id) {
+  const it = itemById(id), l = rowList(name)[i];
   l.id = id; if (it) { l.name = label(it); l.rate = num(it.price); }
-  drawOLines(); orderAmtTouched = false; orderCalc();
+  drawRows(name); orderAmtTouched = false; orderCalc();
 }
+const rowsSum = arr => arr.reduce((a, l) => a + num(l.qty) * num(l.rate), 0);
+const rowText = l => `${num(l.qty)} x ${String(l.id ? label(itemById(l.id)) : l.name).replace(/\s*\|\s*/g, ' / ').trim()} @ ₹${num(l.rate)} = ${money(num(l.qty) * num(l.rate))}`;
 /** Reads the item list; returns what saveOrder / updateOrder need, or null (with a message). */
 function stdOrderData() {
   const lines = oLines.filter(l => num(l.qty) > 0 && (l.id || String(l.name).trim()));
@@ -933,6 +972,8 @@ function calcBlock(v) {
       <label>Labour charges · मजदूरी (₹)</label><input id="oLab" type="number" inputmode="decimal" value="${f(v.labour)}" placeholder="300" oninput="orderCalc()">
       <div id="oExpList"></div>
       <button class="btn sm alt" style="margin-top:8px" onclick="oExp.push({name:'',amt:''});drawOExp()">+ Add other expense · और खर्च जोड़ें</button>
+      ${v.noItems ? '' : `<div id="oCItemsBox"></div>
+      <button class="btn sm alt" style="margin-top:8px" onclick="oCItems.push({id:'',name:'',qty:1,rate:''});drawRows('oCItems')">+ Add item (pillow, cover…) · और आइटम</button>`}
     </div>`;
 }
 function orderModeSet(m) {
@@ -946,7 +987,7 @@ function orderForm(pre) {
   pre = pre || {};
   orderAmtTouched = false;
   const lastRui = store.get('sgg_rate_rui') || '', lastKap = store.get('sgg_rate_kapda') || '';
-  oExp = []; oLines = [{ id: '', name: '', qty: 1, rate: '' }];
+  oExp = []; oLines = [{ id: '', name: '', qty: 1, rate: '' }]; oCItems = [];
   openModal(`${sheetHead('New order / नया ऑर्डर')}
     <label>Mobile · मोबाइल</label><input id="oPhone" type="tel" inputmode="tel" value="${esc(pre.phone)}" oninput="lookupClient('oPhone','oCust','oChip','oAddr')" placeholder="10 digit">
     <div id="oChip" style="margin-top:6px"></div>
@@ -972,22 +1013,24 @@ function orderForm(pre) {
     <label>Note · नोट</label><input id="oNote">
     <button class="btn full" onclick="doOrder()">Save & make receipt · रसीद बनाएं</button>`);
   if (pre.phone) lookupClient('oPhone', 'oCust', 'oChip', 'oAddr');
-  drawOLines(); drawOExp();
+  drawOLines(); drawOExp(); drawRows('oCItems');
   orderModeSet(newOrderMode);
 }
 function orderCalcAmounts() {
   const rui = num(val('oRuiKg')) * num(val('oRuiRate')), kap = num(val('oKapM')) * num(val('oKapRate')), lab = num(val('oLab'));
-  const exp = oExp.reduce((a, e) => a + num(e.amt), 0);
-  return { rui: Math.round(rui * 100) / 100, kap: Math.round(kap * 100) / 100, lab, exp, total: Math.round((rui + kap + lab + exp) * 100) / 100 };
+  const exp = oExp.reduce((a, e) => a + num(e.amt), 0), items = $('oCItemsBox') ? rowsSum(oCItems) : 0;
+  return { rui: Math.round(rui * 100) / 100, kap: Math.round(kap * 100) / 100, lab, exp, items,
+    total: Math.round((rui + kap + lab + exp + items) * 100) / 100 };
 }
 function orderCalc() {
   if (orderMode === 'calc' && $('oCalc')) {
     const a = orderCalcAmounts();
     $('oRuiAmt').textContent = a.rui ? '= ' + money(a.rui) : '';
     $('oKapAmt').textContent = a.kap ? '= ' + money(a.kap) : '';
+    oCItems.forEach((l, i) => { if ($('oCItemsA' + i)) $('oCItemsA' + i).textContent = money(num(l.qty) * num(l.rate)); });
     if (!orderAmtTouched) $('oAmt').value = a.total || '';
   } else if ($('oLines')) {
-    oLines.forEach((l, i) => { if ($('oLA' + i)) $('oLA' + i).textContent = money(num(l.qty) * num(l.rate)); });
+    oLines.forEach((l, i) => { if ($('oLinesA' + i)) $('oLinesA' + i).textContent = money(num(l.qty) * num(l.rate)); });
     if (!orderAmtTouched) { const t = oLines.reduce((a, l) => a + num(l.qty) * num(l.rate), 0); $('oAmt').value = t || ''; }
   }
   $('oLeft').textContent = money(Math.max(0, num(val('oAmt')) - num(val('oAdv'))));
@@ -1015,6 +1058,8 @@ function calcOrderData() {
   if (kg) parts.push(`${CALC_RUI}${rType ? ` (${rType})` : ''}: ${kg} kg × ₹${kgRate} = ${money(a.rui)}`);
   if (m) parts.push(`${CALC_KAP}${kType ? ` (${kType})` : ''}: ${m} m × ₹${mRate} = ${money(a.kap)}`);
   if (a.lab) parts.push(`${CALC_LAB}: ${money(a.lab)}`);
+  const its = $('oCItemsBox') ? oCItems.filter(l => num(l.qty) > 0 && (l.id || String(l.name).trim())) : [];
+  its.forEach(l => parts.push(rowText(l)));
   oExp.filter(e => num(e.amt) > 0).forEach(e => parts.push(`${String(e.name || 'Other expense / और खर्च').replace(/\s*[|:]\s*/g, ' - ').trim()}: ${money(num(e.amt))}`));
   if (extra) parts.push(extra.replace(/\s*\|\s*/g, ' / '));
   if (kgRate) store.set('sgg_rate_rui', String(kgRate));
@@ -1022,7 +1067,8 @@ function calcOrderData() {
   const amount = val('oAmt') === '' ? a.total : num(val('oAmt'));
   // weight is per piece (used by "Make for this order")
   return { qty, rate: Math.round(amount / qty * 100) / 100, weight: kg ? String(Math.round(kg / qty * 1000) / 1000) : '',
-    details: parts.join(' | '), amount };
+    details: parts.join(' | '), amount,
+    lines: its.map(l => ({ itemId: l.id, name: l.id ? '' : String(l.name).trim(), qty: num(l.qty), rate: num(l.rate) })) };
 }
 async function doCalcOrder() {
   const c = calcOrderData();
@@ -1040,6 +1086,7 @@ function editOrderForm(no) {
   const op = orderParts(o.details), ml = op ? null : orderLinesOf(o.details);
   orderMode = op ? 'calc' : 'std';
   oExp = op ? op.exp.map(e => ({ name: e.name, amt: e.amt })) : [];
+  oCItems = op ? op.items : [];
   oLines = ml ? ml.lines : [];
   orderAmtTouched = true;   // keep the saved total until a calculator number is changed
   openModal(`${sheetHead('Edit order / ऑर्डर बदलें · ' + esc(o.no))}
@@ -1060,7 +1107,7 @@ function editOrderForm(no) {
     <label>Note · नोट</label><input id="oNote" value="${esc(o.note)}">
     <button class="btn full" onclick="doEditOrder('${esc(o.no)}')">Save changes · बदलाव सेव करें</button>`);
   if ($('oMode')) $('oMode').value = o.mode || 'Cash';
-  if (op) drawOExp();
+  if (op) { drawOExp(); drawRows('oCItems'); }
   if (ml) { drawOLines(); if (num(o.weight)) $('oWt').value = o.weight; }
   if (op) ['oRuiKg', 'oRuiRate', 'oKapM', 'oKapRate', 'oLab'].forEach(id => $(id).addEventListener('input', () => { orderAmtTouched = false; orderCalc(); }));
   orderCalc();
@@ -1296,7 +1343,8 @@ function orderReceiptImage(o, rcv) {
   if (orderParts(o.details)) {
     const ps = String(o.details).split(' | ');
     rows.push(['Order · ऑर्डर', ps[0]]);
-    ps.slice(1).forEach(t => { const i = t.indexOf(': '); rows.push(i > 0 ? [t.slice(0, i), t.slice(i + 2)] : ['Details · विवरण', t]); });
+    ps.slice(1).forEach(t => { const m = t.match(LINE_RE), i = t.indexOf(': ');
+      rows.push(m ? [m[1] + ' x ' + m[2], money(Number(m[1]) * Number(m[3].replace(/,/g, '')))] : i > 0 ? [t.slice(0, i), t.slice(i + 2)] : ['Details · विवरण', t]); });
   } else if (orderLinesOf(o.details)) {
     String(o.details).split(' | ').forEach((t, i) => {
       const m = t.match(LINE_RE);
