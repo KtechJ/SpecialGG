@@ -821,10 +821,10 @@ function orderParts(details) {
   const d = String(details || ''), n = re => { const m = d.match(re); return m ? Number(m[1].replace(/,/g, '')) : 0; };
   if (d.indexOf(' | ') < 0 || (d.indexOf(CALC_RUI) < 0 && d.indexOf(CALC_KAP) < 0 && d.indexOf(CALC_LAB) < 0)) return null;
   const ps = d.split(' | '), head = ps[0], qm = head.match(/^(\d+) x (.*)$/);
-  const known = t => t.indexOf(CALC_RUI + ':') === 0 || t.indexOf(CALC_RUI + ' (') === 0 || t.indexOf(CALC_KAP + ':') === 0 || t.indexOf(CALC_LAB + ':') === 0;
+  const known = t => t.indexOf(CALC_RUI + ':') === 0 || t.indexOf(CALC_RUI + ' (') === 0 || t.indexOf(CALC_KAP + ':') === 0 || t.indexOf(CALC_KAP + ' (') === 0 || t.indexOf(CALC_LAB + ':') === 0;
   const EXP = /^(.+?): ₹([\d.,]+)$/, rest = ps.slice(1).filter(t => !known(t));
-  const rt = d.match(/Rui\/Kapas · रुई \(([^)]+)\):/);
-  return { ruiType: rt ? rt[1] : '', kg: n(/Rui\/Kapas[^:]*: ([\d.,]+) kg/), kgRate: n(/ kg × ₹([\d.,]+)/), m: n(/Kapda[^:]*: ([\d.,]+) m/),
+  const rt = d.match(/Rui\/Kapas · रुई \(([^)]+)\):/), kt = d.match(/Kapda · कपड़ा \(([^)]+)\):/);
+  return { ruiType: rt ? rt[1] : '', kapType: kt ? kt[1] : '', kg: n(/Rui\/Kapas[^:]*: ([\d.,]+) kg/), kgRate: n(/ kg × ₹([\d.,]+)/), m: n(/Kapda[^:]*: ([\d.,]+) m/),
     mRate: n(/ m × ₹([\d.,]+)/), labour: n(/Labour[^:]*: ₹([\d.,]+)/),
     exp: rest.filter(t => EXP.test(t)).map(t => { const m = t.match(EXP); return { name: m[1], amt: Number(m[2].replace(/,/g, '')) }; }),
     qty: qm ? Number(qm[1]) : 1, what: qm ? qm[2] : head, extra: rest.filter(t => !EXP.test(t)).join(' | ') };
@@ -888,9 +888,17 @@ function stdBlock() {
 }
 // Rui / Kapas types come from the Items tab (names with Rui / Kapas), using their sell price per kg.
 const ruiItems = () => D.items.filter(x => /(^|[^a-z])(rui|kapas)([^a-z]|$)|रुई|कपास/i.test(x.name));
+// Kapda types: items with Kapda / Regzine / Rexine in the name, using their sell price per meter.
+const kapItems = () => D.items.filter(x => /kapda|regzine|rexine|कपड़ा/i.test(x.name) && !ruiItems().includes(x));
+const typeName = x => label(x).replace(/[|:()]/g, ' ').replace(/\s+/g, ' ').trim();   // safe inside "(...)" of the details text
 function ruiPick(id) {
   const it = itemById(id);
   if (it && num(it.price)) $('oRuiRate').value = num(it.price);
+  orderAmtTouched = false; orderCalc();
+}
+function kapPick(id) {
+  const it = itemById(id);
+  if (it && num(it.price)) $('oKapRate').value = num(it.price);
   orderAmtTouched = false; orderCalc();
 }
 function calcBlock(v) {
@@ -903,12 +911,15 @@ function calcBlock(v) {
       </div>
       ${ruiItems().length ? `<label>Rui type · रुई का प्रकार</label>
       <select id="oRuiType" onchange="ruiPick(this.value)"><option value="">— Choose Rui · रुई चुनें —</option>${ruiItems().map(x =>
-        `<option value="${esc(x.id)}" ${v.ruiType && label(x).toLowerCase() === String(v.ruiType).toLowerCase() ? 'selected' : ''}>${esc(label(x))}${num(x.price) ? ' · ' + money(x.price) + '/kg' : ''}</option>`).join('')}</select>` : ''}
+        `<option value="${esc(x.id)}" ${v.ruiType && typeName(x).toLowerCase() === String(v.ruiType).toLowerCase() ? 'selected' : ''}>${esc(label(x))}${num(x.price) ? ' · ' + money(x.price) + '/kg' : ''}</option>`).join('')}</select>` : ''}
       <div class="row">
         <div><label>Rui / Kapas (kg) · रुई</label><input id="oRuiKg" type="number" inputmode="decimal" value="${f(v.kg)}" placeholder="7" oninput="orderCalc()"></div>
         <div><label>Price per kg · ₹/kg</label><input id="oRuiRate" type="number" inputmode="decimal" value="${f(v.kgRate)}" placeholder="350" oninput="orderCalc()"></div>
       </div>
       <div class="muted" id="oRuiAmt" style="text-align:right;margin-top:-4px"></div>
+      ${kapItems().length ? `<label>Kapda type · कपड़े का प्रकार</label>
+      <select id="oKapType" onchange="kapPick(this.value)"><option value="">— Choose Kapda · कपड़ा चुनें —</option>${kapItems().map(x =>
+        `<option value="${esc(x.id)}" ${v.kapType && typeName(x).toLowerCase() === String(v.kapType).toLowerCase() ? 'selected' : ''}>${esc(label(x))}${num(x.price) ? ' · ' + money(x.price) + '/m' : ''}</option>`).join('')}</select>` : ''}
       <div class="row">
         <div><label>Kapda (meter) · कपड़ा</label><input id="oKapM" type="number" inputmode="decimal" value="${f(v.m)}" placeholder="5" oninput="orderCalc()"></div>
         <div><label>Price per meter · ₹/m</label><input id="oKapRate" type="number" inputmode="decimal" value="${f(v.mRate)}" placeholder="90" oninput="orderCalc()"></div>
@@ -994,9 +1005,10 @@ function calcOrderData() {
   if (!kg && !m && !a.lab) { toast('Enter Rui, Kapda or Labour too / रुई, कपड़ा या मजदूरी भी लिखें', true); return null; }
   const what = val('oCWhat') || 'Gadi / गादी';
   const parts = [(qty > 1 ? qty + ' x ' : '') + what];
-  const rType = $('oRuiType') && val('oRuiType') ? label(itemById(val('oRuiType'))).replace(/[|:()]/g, ' ').replace(/\s+/g, ' ').trim() : '';
+  const rType = $('oRuiType') && val('oRuiType') ? typeName(itemById(val('oRuiType'))) : '';
+  const kType = $('oKapType') && val('oKapType') ? typeName(itemById(val('oKapType'))) : '';
   if (kg) parts.push(`${CALC_RUI}${rType ? ` (${rType})` : ''}: ${kg} kg × ₹${kgRate} = ${money(a.rui)}`);
-  if (m) parts.push(`${CALC_KAP}: ${m} m × ₹${mRate} = ${money(a.kap)}`);
+  if (m) parts.push(`${CALC_KAP}${kType ? ` (${kType})` : ''}: ${m} m × ₹${mRate} = ${money(a.kap)}`);
   if (a.lab) parts.push(`${CALC_LAB}: ${money(a.lab)}`);
   oExp.filter(e => num(e.amt) > 0).forEach(e => parts.push(`${String(e.name || 'Other expense / और खर्च').replace(/\s*[|:]\s*/g, ' - ').trim()}: ${money(num(e.amt))}`));
   if (extra) parts.push(extra.replace(/\s*\|\s*/g, ' / '));
