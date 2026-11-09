@@ -652,6 +652,9 @@ function saveOrder(p) {
     if (!itemId && str_(p.what)) {   // custom order: add "what to make" to the item list for next time
       itemId = ensureItem_(p.what, { price: rate, cost: 0, made: 'Yes', track: 'Yes' }).id;
     }
+    (Array.isArray(p.lines) ? p.lines : []).forEach(function (l) {   // order with several items
+      if (!str_(l.itemId) && str_(l.name)) ensureItem_(l.name, { price: num_(l.rate), cost: 0, made: 'Yes', track: 'Yes' });
+    });
     if (itemId) {
       const it = byId_(readAll_('Items'))[itemId];
       if (!it) throw new Error('Item not found');
@@ -744,17 +747,32 @@ function deliverOrder(p) {
     if (!o) throw new Error('Order not found');
     if (o.status === 'Delivered' || o.status === 'Cancelled') throw new Error('Order is ' + o.status);
     let cost = num_(o.madeCost), itemText = '', stockLines = []; // cost recorded by "Make for this order" (custom gadi)
-    if (str_(p.itemId)) {
-      const it = byId_(readAll_('Items'))[str_(p.itemId)];
-      const q = num_(p.qty) || 1;
-      if (!it) throw new Error('Item not found');
-      cost = q * num_(it.cost);
-      itemText = ' [' + label_(it) + ' x' + q + ']';
-      if (tracked_(it)) {
-        if (num_(it.stock) < q) throw new Error('Not enough stock / स्टॉक कम है: ' + label_(it) + ' (have ' + num_(it.stock) + ')');
-        setField_('Items', it._row, 'stock', num_(it.stock) - q);
-        stockLines = [{ id: str_(it.id), qty: q }];
-      }
+    // Take from stock: one item (itemId + qty) or several (lines: [{itemId, qty}])
+    const take = (Array.isArray(p.lines) ? p.lines : [{ itemId: p.itemId, qty: p.qty }])
+      .filter(function (l) { return str_(l.itemId); });
+    if (take.length) {
+      const items = byId_(readAll_('Items')), need = {};
+      take.forEach(function (l) {
+        if (!items[str_(l.itemId)]) throw new Error('Item not found');
+        need[str_(l.itemId)] = (need[str_(l.itemId)] || 0) + (num_(l.qty) || 1);
+      });
+      Object.keys(need).forEach(function (id) {
+        const it = items[id];
+        if (tracked_(it) && num_(it.stock) < need[id]) throw new Error('Not enough stock / स्टॉक कम है: ' + label_(it) + ' (have ' + num_(it.stock) + ')');
+      });
+      cost = 0;
+      const texts = [];
+      Object.keys(need).forEach(function (id) {
+        const it = items[id], q = need[id];
+        cost += q * num_(it.cost);
+        texts.push(label_(it) + ' x' + q);
+        if (tracked_(it)) {
+          setField_('Items', it._row, 'stock', num_(it.stock) - q);
+          stockLines.push({ id: str_(it.id), qty: q });
+        }
+      });
+      if (num_(o.madeCost) > 0 && !str_(o.itemId)) cost += num_(o.madeCost);
+      itemText = ' [' + texts.join(', ') + ']';
     }
     const net = num_(o.amount), paidNow = num_(p.paidNow);
     const advance = orderPaid_([o], readAll_('Payments'))[str_(o.no)] || 0; // advance + payments before delivery
@@ -772,13 +790,29 @@ function deliverOrder(p) {
     return {
       msg: 'Delivered, bill ' + bill + ' / डिलीवर हुआ',
       bill: { bill: bill, date: fmt_(new Date(), 'dd-MM-yyyy'), customer: str_(o.customer), phone: str_(o.phone),
-        lines: (num_(o.qty) > 1 && Math.abs(num_(o.qty) * num_(o.rate) - net) < 0.01)
-          ? [{ name: str_(o.details), qty: num_(o.qty), price: num_(o.rate) }]
-          : [{ name: str_(o.details), qty: 1, price: net }],
+        lines: orderBillLines_(o, net),
         total: net, discount: 0, net: net,
         paid: paid, balance: balance, advance: advance }
     };
   });
+}
+
+/** Bill lines for a delivered order. Several-item orders are stored as "2 x Pillow @ ₹200 = ₹400 | ...". */
+function orderBillLines_(o, net) {
+  const re = /^([\d.]+) x (.+?) @ ₹([\d,.]+)/;
+  const parts = str_(o.details).split(' | '), lines = [];
+  parts.forEach(function (t) {
+    const m = t.match(re);
+    if (m) lines.push({ name: m[2], qty: Number(m[1]), price: Number(m[3].replace(/,/g, '')) });
+  });
+  if (lines.length > 1) {
+    const sum = lines.reduce(function (a, l) { return a + l.qty * l.price; }, 0);
+    if (Math.abs(sum - net) > 0.01) lines.push({ name: 'Adjustment / बदलाव', qty: 1, price: round2_(net - sum) });
+    return lines;
+  }
+  return (num_(o.qty) > 1 && Math.abs(num_(o.qty) * num_(o.rate) - net) < 0.01)
+    ? [{ name: str_(o.details), qty: num_(o.qty), price: num_(o.rate) }]
+    : [{ name: str_(o.details), qty: 1, price: net }];
 }
 
 function savePayment(p) {
