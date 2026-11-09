@@ -25,6 +25,9 @@ The `docs/` folder is an installable Android app (own icon, full screen, PIN log
 Google Sheet. It is served by GitHub Pages from `docs/`. See [`docs/README.md`](docs/README.md) for setup. Rebuild it after changing `Index.html` with
 `python3 tools/build_app.py`.
 
+There is also a real Android **APK** (`android/`, ready file `docs/SpecialGadiGhar.apk`) that opens the same app full screen,
+with WhatsApp sharing and downloads working. See [`android/README.md`](android/README.md).
+
 ## Setup from scratch (about 15 minutes)
 
 You need: a laptop/computer for setup (easier than phone), Imran bhai's Gmail account, his father's Gmail address,
