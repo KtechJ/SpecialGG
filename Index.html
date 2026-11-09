@@ -1467,9 +1467,9 @@ async function vyView(name) {
   openModal(`${sheetHead('\u{1F3EA} ' + esc(v.name))}
     <div class="muted">${[v.city, v.phone].filter(Boolean).map(esc).join(' · ')}</div>
     <div class="stats" style="grid-template-columns:1fr 1fr 1fr;margin-top:10px">
-      <div class="stat"><div class="l">Maal · माल</div><div class="v" style="font-size:16px">${money(v.purchased + v.opening)}</div></div>
+      <div class="stat"><div class="l">Total bills · कुल बिल</div><div class="v" style="font-size:16px">${money(v.purchased + v.opening)}</div></div>
       <div class="stat"><div class="l">Paid · दिया</div><div class="v ok" style="font-size:16px">${money(v.paid)}</div></div>
-      <div class="stat"><div class="l">Pending · बाकी</div><div class="v ${v.pending > 0.5 ? 'low' : 'ok'}" style="font-size:16px">${money(v.pending)}</div></div>
+      <div class="stat"><div class="l">Due · बाकी</div><div class="v ${v.pending > 0.5 ? 'low' : 'ok'}" style="font-size:16px">${money(v.pending)}</div></div>
     </div>
     <div class="actions">
       <button class="btn sm" onclick="vyPayForm()">\u{1F4B8} Pay / भुगतान</button>
@@ -1508,28 +1508,18 @@ function vyBillForm() {
   openModal(`${sheetHead('\u{1F9FE} New bill / नया बिल: ' + esc(v.name))}
     <div class="row"><div><label>Invoice / Bill No · बिल नं.</label><input id="bInv" placeholder="e.g. 1452"></div>
       <div><label>Invoice date · बिल की तारीख</label><input id="bDate" type="date" value="${D.today}" max="${D.today}"></div></div>
-    <label>Product · माल</label>
-    <select id="bPick" onchange="vyBillPick()"><option value="">✏️ Type product (no stock change) · माल लिखें</option>
-      <optgroup label="Raw material · कच्चा माल (adds stock)">${D.raw.map(r => `<option value="Raw|${esc(r.id)}">${esc(r.name)} (${esc(r.unit)})</option>`).join('')}</optgroup>
-      <optgroup label="Ready items · तैयार माल (adds stock)">${D.items.map(x => `<option value="Item|${esc(x.id)}">${esc(label(x))}</option>`).join('')}</optgroup></select>
-    <input id="bProd" style="margin-top:6px" placeholder="Cotton 2 bori, fabric, foam sheets…">
-    <div class="row"><div id="bQtyBox" class="hidden"><label>Qty · मात्रा <span id="bUnit"></span></label><input id="bQty" type="number" inputmode="decimal"></div>
-      <div><label>Bill amount · बिल की रकम (₹)</label><input id="bAmt" type="number" inputmode="decimal"></div></div>
+    <label>Product / raw material · माल</label>
+    <input id="bProd" placeholder="Rui 2 bori, Kapda 50 m, thread…">
+    <div class="chips">${D.raw.slice(0, 8).map(r => `<button type="button" onclick="$('bProd').value=this.textContent">${esc(r.name)}</button>`).join('')}</div>
+    <label>Bill amount · बिल की रकम (₹)</label><input id="bAmt" type="number" inputmode="decimal">
     <label>Delivery date (maal aaya) · माल कब आया</label><input id="bDel" type="date" value="${D.today}">
     <label>Note · नोट</label><input id="bNote" placeholder="optional">
     <button class="btn full" onclick="doVyBill()">Save bill · बिल सेव करें</button>`);
 }
-function vyBillPick() {
-  const [kind, id] = val('bPick').split('|');
-  $('bQtyBox').classList.toggle('hidden', !id);
-  $('bProd').classList.toggle('hidden', !!id);
-  const r = kind === 'Raw' ? D.raw.find(x => String(x.id) === id) : null;
-  $('bUnit').textContent = r ? '(' + r.unit + ')' : id ? '(pcs)' : '';
-}
 async function doVyBill() {
-  const [kind, id] = val('bPick').split('|');
+  // record only: a bill never changes stock (use Purchase for that)
   await save('saveVyBill', { supplier: V.name, invoice: val('bInv'), invoiceDate: val('bDate'), product: val('bProd'),
-    kind: kind || '', itemId: id || '', qty: val('bQty'), amount: val('bAmt'), delivery: val('bDel'), note: val('bNote') });
+    amount: val('bAmt'), delivery: val('bDel'), note: val('bNote') });
   await vyView(V.name);
 }
 async function vyBillDel(i) {
