@@ -517,6 +517,7 @@ function shareBlock(img, text, phone, file, what) {
   lastShare = { img, text, file, phone, spec: lastCardSpec };
   return `<img src="${img}" style="width:100%;border:1px solid var(--line);border-radius:10px" alt="${esc(what)} picture">
     <button class="btn full" onclick="printThermal()">\u{1F5A8} Print (58mm printer) · प्रिंट करें</button>
+    <button class="btn full alt" style="margin-top:4px;padding:6px;font-size:13px" onclick="sharePrintPicture()">Share print picture (other printer app) · प्रिंट फ़ोटो शेयर</button>
     <button class="btn full green" onclick="copyPicture()">Copy picture · फ़ोटो कॉपी करें</button>
     <a class="btn full green" target="_blank" href="${phoneLink(phone, 'Namaste! ' + what + ' from ' + D.shop.name + ' (picture below) / ' + D.shop.name + ' की रसीद')}">Open WhatsApp chat${phone ? ' with ' + esc(phone) : ''} · व्हाट्सएप खोलें</a>
     <div class="muted" style="margin:6px 0">Copy the picture, open the chat, then paste it (Mac: ⌘+V, phone: long-press → Paste).
@@ -596,24 +597,69 @@ function thermalImage(spec) {
   });
   return c.toDataURL('image/png');
 }
-/** Print: share the 58 mm picture to a printer app (RawBT / the printer's app). On a computer: browser print. */
+/** 58 mm picture → ESC/POS printer commands (black/white raster, sent in bands so small printers keep up). */
+function escposFromImage(img) {
+  return new Promise((res, rej) => {
+    const im = new Image();
+    im.onload = () => {
+      const W = 384, H = Math.round(im.height * W / im.width), c = document.createElement('canvas');
+      c.width = W; c.height = H;
+      const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, W, H); x.drawImage(im, 0, 0, W, H);
+      const px = x.getImageData(0, 0, W, H).data, bpr = W / 8, out = [0x1b, 0x40];   // ESC @ (reset)
+      for (let y0 = 0; y0 < H; y0 += 128) {
+        const h = Math.min(128, H - y0);
+        out.push(0x1d, 0x76, 0x30, 0x00, bpr & 255, bpr >> 8, h & 255, h >> 8);   // GS v 0: raster band
+        for (let y = y0; y < y0 + h; y++) for (let bx = 0; bx < bpr; bx++) {
+          let byte = 0;
+          for (let bit = 0; bit < 8; bit++) {
+            const i = (y * W + bx * 8 + bit) * 4, lum = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
+            if (lum < 160) byte |= 0x80 >> bit;
+          }
+          out.push(byte);
+        }
+      }
+      out.push(0x1b, 0x64, 0x04);   // ESC d 4: feed 4 lines to tear
+      let bin = '';
+      for (let i = 0; i < out.length; i += 8192) bin += String.fromCharCode.apply(null, out.slice(i, i + 8192));
+      res(btoa(bin));
+    };
+    im.onerror = rej;
+    im.src = img;
+  });
+}
+/** Print: hand the bill straight to RawBT (ESC/POS for the 58 mm Bluetooth printer). */
 async function printThermal() {
   const sh = lastShare;
   if (!sh || !sh.spec) { toast('Nothing to print', true); return; }
+  const img = thermalImage(sh.spec);
+  if (!/Android/i.test(navigator.userAgent)) {   // computer: print with the browser at 58 mm
+    const w = window.open('', '_blank');
+    if (!w) { toast('Allow pop-ups to print', true); return; }
+    w.document.write(`<html><head><title>Print</title><style>@page{size:58mm auto;margin:0}body{margin:0}img{width:58mm}</style></head>
+      <body><img src="${img}" onload="setTimeout(function(){print()},300)"></body></html>`);
+    w.document.close();
+    return;
+  }
+  try {
+    const b64 = await escposFromImage(img);
+    toast('Sending to RawBT printer… · प्रिंट हो रहा है');
+    // Android app (APK): the rawbt: link is handed to RawBT. Chrome: an intent link opens RawBT directly.
+    location.href = window.AndroidApp ? 'rawbt:base64,' + b64
+      : 'intent:base64,' + b64 + '#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;';
+  } catch (e) {
+    toast('Could not prepare the print. Use "Share print picture" · शेयर से प्रिंट करें', true);
+  }
+}
+/** Other printer apps: share the 58 mm picture (choose the app in the share menu). */
+async function sharePrintPicture() {
+  const sh = lastShare;
+  if (!sh || !sh.spec) return;
   const img = thermalImage(sh.spec), name = 'Print-' + sh.file;
   try {
     const file = new File([await (await fetch(img)).blob()], name, { type: 'image/png' });
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      toast('Choose RawBT (or your printer app) · RawBT चुनें');
-      await navigator.share({ files: [file] });
-      return;
-    }
+    if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file] }); return; }
   } catch (e) { if (e && e.name === 'AbortError') return; }
-  const w = window.open('', '_blank');   // computer: print with the browser
-  if (!w) { toast('Allow pop-ups to print', true); return; }
-  w.document.write(`<html><head><title>${esc(name)}</title><style>@page{size:58mm auto;margin:0}body{margin:0}img{width:58mm}</style></head>
-    <body><img src="${img}" onload="setTimeout(function(){print()},300)"></body></html>`);
-  w.document.close();
+  toast('Sharing not available here · शेयर नहीं हो सका', true);
 }
 async function copyPicture() {
   const sh = lastShare;
