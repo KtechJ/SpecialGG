@@ -850,12 +850,12 @@ function orderParts(details) {
   const d = String(details || ''), n = re => { const m = d.match(re); return m ? Number(m[1].replace(/,/g, '')) : 0; };
   if (d.indexOf(' | ') < 0 || (d.indexOf(CALC_RUI) < 0 && d.indexOf(CALC_KAP) < 0 && d.indexOf(CALC_LAB) < 0)) return null;
   const ps = d.split(' | '), head = ps[0], qm = head.match(/^(\d+) x (.*)$/);
-  const known = t => t.indexOf(CALC_RUI + ':') === 0 || t.indexOf(CALC_RUI + ' (') === 0 || t.indexOf(CALC_KAP + ':') === 0 || t.indexOf(CALC_KAP + ' (') === 0 || t.indexOf(CALC_LAB + ':') === 0;
+  const known = t => t.indexOf(CALC_RUI + ':') === 0 || t.indexOf(CALC_RUI + ' (') === 0 || t.indexOf(CALC_KAP + ':') === 0 || t.indexOf(CALC_KAP + ' (') === 0 || t.indexOf(CALC_LAB + ':') === 0 || t.indexOf(CALC_LAB + ' (') === 0;
   const EXP = /^(.+?): ₹([\d.,]+)$/, rest = ps.slice(1).filter(t => !known(t) && !LINE_RE.test(t));
   const its = ps.slice(1).filter(t => LINE_RE.test(t)).map(t => { const m = t.match(LINE_RE), it = D.items.find(x => label(x).toLowerCase() === m[2].toLowerCase());
     return { id: it ? String(it.id) : '', name: m[2], qty: Number(m[1]), rate: Number(m[3].replace(/,/g, '')) }; });
-  const rt = d.match(/Rui\/Kapas · रुई \(([^)]+)\):/), kt = d.match(/Kapda · कपड़ा \(([^)]+)\):/);
-  return { ruiType: rt ? rt[1] : '', kapType: kt ? kt[1] : '', kg: n(/Rui\/Kapas[^:]*: ([\d.,]+) kg/), kgRate: n(/ kg × ₹([\d.,]+)/), m: n(/Kapda[^:]*: ([\d.,]+) m/),
+  const rt = d.match(/Rui\/Kapas · रुई \(([^)]+)\):/), kt = d.match(/Kapda · कपड़ा \(([^)]+)\):/), lt = d.match(/Labour · मजदूरी \(([^)]+)\):/);
+  return { ruiType: rt ? rt[1] : '', kapType: kt ? kt[1] : '', labType: lt ? lt[1] : '', kg: n(/Rui\/Kapas[^:]*: ([\d.,]+) kg/), kgRate: n(/ kg × ₹([\d.,]+)/), m: n(/Kapda[^:]*: ([\d.,]+) m/),
     mRate: n(/ m × ₹([\d.,]+)/), labour: n(/Labour[^:]*: ₹([\d.,]+)/),
     exp: rest.filter(t => EXP.test(t)).map(t => { const m = t.match(EXP); return { name: m[1], amt: Number(m[2].replace(/,/g, '')) }; }),
     items: its, qty: qm ? Number(qm[1]) : 1, what: qm ? qm[2] : head, extra: rest.filter(t => !EXP.test(t)).join(' | ') };
@@ -929,6 +929,13 @@ function stdBlock() {
 const ruiItems = () => D.items.filter(x => /(^|[^a-z])(rui|kapas)([^a-z]|$)|रुई|कपास/i.test(x.name));
 // Kapda types: items with Kapda / Regzine / Rexine in the name, using their sell price per meter.
 const kapItems = () => D.items.filter(x => /kapda|regzine|rexine|कपड़ा/i.test(x.name) && !ruiItems().includes(x));
+// Labour types: items with majuri / majori / mazduri / labour in the name, price = labour per piece.
+const labItems = () => D.items.filter(x => /maj[ou]o?ri|mazd[ou]o?ri|labou?r|मजदूरी/i.test(x.name));
+function labPick(id) {
+  const it = itemById(id);
+  if (it) $('oLab').value = Math.round(num(it.price) * Math.max(1, num(val('oCQty')) || 1) * 100) / 100 || '';
+  orderAmtTouched = false; orderCalc();
+}
 const typeName = x => label(x).replace(/[|:()]/g, ' ').replace(/\s+/g, ' ').trim();   // safe inside "(...)" of the details text
 function ruiPick(id) {
   const it = itemById(id);
@@ -964,6 +971,9 @@ function calcBlock(v) {
         <div><label>Price per meter · ₹/m</label><input id="oKapRate" type="number" inputmode="decimal" value="${f(v.mRate)}" placeholder="90" oninput="orderCalc()"></div>
       </div>
       <div class="muted" id="oKapAmt" style="text-align:right;margin-top:-4px"></div>
+      ${labItems().length ? `<label>Labour type · मजदूरी का प्रकार</label>
+      <select id="oLabType" onchange="labPick(this.value)"><option value="">— Choose labour · मजदूरी चुनें —</option>${labItems().map(x =>
+        `<option value="${esc(x.id)}" ${v.labType && typeName(x).toLowerCase() === String(v.labType).toLowerCase() ? 'selected' : ''}>${esc(label(x))} · ${money(x.price)}${num(x.price) ? '/pc' : ''}</option>`).join('')}</select>` : ''}
       <label>Labour charges · मजदूरी (₹)</label><input id="oLab" type="number" inputmode="decimal" value="${f(v.labour)}" placeholder="300" oninput="orderCalc()">
       <div id="oExpList"></div>
       <button class="btn sm alt" style="margin-top:8px" onclick="oExp.push({name:'',amt:''});drawOExp()">+ Add other expense · और खर्च जोड़ें</button>
@@ -1050,9 +1060,10 @@ function calcOrderData() {
   const parts = [(qty > 1 ? qty + ' x ' : '') + what];
   const rType = $('oRuiType') && val('oRuiType') ? typeName(itemById(val('oRuiType'))) : '';
   const kType = $('oKapType') && val('oKapType') ? typeName(itemById(val('oKapType'))) : '';
+  const lType = $('oLabType') && val('oLabType') ? typeName(itemById(val('oLabType'))) : '';
   if (kg) parts.push(`${CALC_RUI}${rType ? ` (${rType})` : ''}: ${kg} kg × ₹${kgRate} = ${money(a.rui)}`);
   if (m) parts.push(`${CALC_KAP}${kType ? ` (${kType})` : ''}: ${m} m × ₹${mRate} = ${money(a.kap)}`);
-  if (a.lab) parts.push(`${CALC_LAB}: ${money(a.lab)}`);
+  if (a.lab) parts.push(`${CALC_LAB}${lType ? ` (${lType})` : ''}: ${money(a.lab)}`);
   const its = $('oCItemsBox') ? oCItems.filter(l => num(l.qty) > 0 && (l.id || String(l.name).trim())) : [];
   its.forEach(l => parts.push(rowText(l)));
   oExp.filter(e => num(e.amt) > 0).forEach(e => parts.push(`${String(e.name || 'Other expense / और खर्च').replace(/\s*[|:]\s*/g, ' - ').trim()}: ${money(num(e.amt))}`));
