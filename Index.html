@@ -518,6 +518,7 @@ function shareBlock(img, text, phone, file, what) {
   return `<img src="${img}" style="width:100%;border:1px solid var(--line);border-radius:10px" alt="${esc(what)} picture">
     <button class="btn full" onclick="printThermal()">\u{1F5A8} Print (58mm printer) · प्रिंट करें</button>
     <button class="btn full alt" style="margin-top:4px;padding:6px;font-size:13px" onclick="sharePrintPicture()">Share print picture (other printer app) · प्रिंट फ़ोटो शेयर</button>
+    ${window.AndroidApp && window.AndroidApp.btPrint ? `<button class="btn full alt" style="margin-top:4px;padding:6px;font-size:13px" onclick="printThermalPick()">Change printer · प्रिंटर बदलें</button>` : ''}
     <button class="btn full green" onclick="copyPicture()">Copy picture · फ़ोटो कॉपी करें</button>
     <a class="btn full green" target="_blank" href="${phoneLink(phone, 'Namaste! ' + what + ' from ' + D.shop.name + ' (picture below) / ' + D.shop.name + ' की रसीद')}">Open WhatsApp chat${phone ? ' with ' + esc(phone) : ''} · व्हाट्सएप खोलें</a>
     <div class="muted" style="margin:6px 0">Copy the picture, open the chat, then paste it (Mac: ⌘+V, phone: long-press → Paste).
@@ -642,6 +643,7 @@ async function printThermal() {
   }
   try {
     const b64 = await escposFromImage(img);
+    if (window.AndroidApp && window.AndroidApp.btPrint) return btPrintFlow(b64);   // APK 1.2+: print straight over Bluetooth
     toast('Sending to RawBT printer… · प्रिंट हो रहा है');
     // Android app (APK): the rawbt: link is handed to RawBT. Chrome: an intent link opens RawBT directly.
     location.href = window.AndroidApp ? 'rawbt:base64,' + b64
@@ -649,6 +651,41 @@ async function printThermal() {
   } catch (e) {
     toast('Could not prepare the print. Use "Share print picture" · शेयर से प्रिंट करें', true);
   }
+}
+/** APK: pick the paired printer once (remembered), then send the ESC/POS bytes over Bluetooth. */
+function btPrintFlow(b64, forcePick) {
+  const A = window.AndroidApp, r = A.btPrinters();
+  if (r === 'PERM') { window.__btPerm = ok => ok ? btPrintFlow(b64, forcePick) : toast('Allow "Nearby devices" to print · अनुमति दें', true); return; }
+  if (r === 'OFF') { toast('Turn on Bluetooth, then tap Print again · ब्लूटूथ चालू करें', true); return; }
+  if (r === 'NOBT' || r === 'ERR') { toast('Bluetooth not available on this phone', true); return; }
+  const list = JSON.parse(r);
+  if (!list.length) { toast('Pair the printer first: phone Settings → Bluetooth → MPT-II · पहले प्रिंटर जोड़ें', true); return; }
+  const saved = store.get('sgg_printer');
+  let dev = forcePick ? null : list.find(d => d.address === saved);
+  if (!dev && !forcePick) { const p = list.filter(d => /mpt|print|pos|58|thermal|pt-?2/i.test(d.name)); if (p.length === 1) dev = p[0]; }
+  if (!dev) {
+    window.__btPick = i => { store.set('sgg_printer', list[i].address); btSend(list[i], b64); };
+    openModal(`${sheetHead('\u{1F5A8} Choose printer · प्रिंटर चुनें')}
+      <div class="muted">Paired Bluetooth devices. Choose your receipt printer (e.g. MPT-II). It is remembered.</div>
+      <div class="card list" style="margin-top:8px">${list.map((d, i) => `<div class="it" onclick="__btPick(${i})"><div><div class="t">${esc(d.name)}</div>
+        <div class="s">${esc(d.address)}</div></div><div class="num">›</div></div>`).join('')}</div>`);
+    return;
+  }
+  btSend(dev, b64);
+}
+function btSend(dev, b64) {
+  store.set('sgg_printer', dev.address);
+  toast('Printing on ' + dev.name + '… · प्रिंट हो रहा है');
+  window.__btDone = (ok, msg) => {
+    if (ok) { toast('Printed ✓ · प्रिंट हो गया'); return; }
+    toast('Print failed: ' + msg + '. Is the printer on? Close RawBT / other printer apps and try again.', true);
+  };
+  window.AndroidApp.btPrint(dev.address, b64);
+}
+async function printThermalPick() {
+  const sh = lastShare;
+  if (!sh || !sh.spec) return;
+  btPrintFlow(await escposFromImage(thermalImage(sh.spec)), true);
 }
 /** Other printer apps: share the 58 mm picture (choose the app in the share menu). */
 async function sharePrintPicture() {

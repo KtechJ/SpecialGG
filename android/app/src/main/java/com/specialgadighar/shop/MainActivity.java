@@ -1,6 +1,12 @@
 package com.specialgadighar.shop;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothManager;
+import android.bluetooth.BluetoothSocket;
+import android.content.pm.PackageManager;
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.ContentValues;
@@ -32,6 +38,10 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.UUID;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 /**
  * Opens the Special Gadi Ghar web app (GitHub Pages) full screen, and adds what a plain WebView lacks:
@@ -77,7 +87,7 @@ public class MainActivity extends Activity {
         s.setAllowContentAccess(false);
         s.setSupportMultipleWindows(false);    // target="_blank" links come to shouldOverrideUrlLoading
         s.setMediaPlaybackRequiresUserGesture(true);
-        s.setUserAgentString(s.getUserAgentString() + " SpecialGadiGharApp/1.1");
+        s.setUserAgentString(s.getUserAgentString() + " SpecialGadiGharApp/1.2");
 
         web.addJavascriptInterface(new Bridge(), "AndroidApp");
         web.setWebChromeClient(new WebChromeClient());   // shows confirm() / alert() dialogs
@@ -228,6 +238,103 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void reload() { runOnUiThread(() -> web.loadUrl(appUrl)); }
+
+        /** Paired Bluetooth devices as JSON [{name, address}], or "PERM" while permission is being asked. */
+        @JavascriptInterface
+        public String btPrinters() {
+            if (!btAllowed()) { askBt(); return "PERM"; }
+            try {
+                BluetoothAdapter ad = btAdapter();
+                if (ad == null) return "NOBT";
+                if (!ad.isEnabled()) return "OFF";
+                JSONArray arr = new JSONArray();
+                for (BluetoothDevice d : ad.getBondedDevices()) {
+                    JSONObject o = new JSONObject();
+                    o.put("name", d.getName() == null ? d.getAddress() : d.getName());
+                    o.put("address", d.getAddress());
+                    arr.put(o);
+                }
+                return arr.toString();
+            } catch (Exception e) {
+                return "ERR";
+            }
+        }
+
+        /** Sends ESC/POS bytes (base64) to the paired printer; calls window.__btDone(ok, message) when finished. */
+        @JavascriptInterface
+        public void btPrint(String address, String b64) {
+            new Thread(() -> {
+                String err = null;
+                try { sendToPrinter(address, Base64.decode(b64, Base64.DEFAULT)); }
+                catch (Exception e) { err = e.getMessage() == null ? e.toString() : e.getMessage(); }
+                final String msg = err;
+                runOnUiThread(() -> { if (web != null) web.evaluateJavascript("window.__btDone && window.__btDone(" + (msg == null) + ","
+                        + JSONObject.quote(msg == null ? "" : msg) + ")", null); });
+            }).start();
+        }
+    }
+
+    private static final UUID SPP = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+    private static final Object PRINT_LOCK = new Object();
+
+    private BluetoothAdapter btAdapter() {
+        BluetoothManager m = (BluetoothManager) getSystemService(BLUETOOTH_SERVICE);
+        return m == null ? null : m.getAdapter();
+    }
+
+    private boolean btAllowed() {
+        return Build.VERSION.SDK_INT < 31 || checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private void askBt() {
+        if (Build.VERSION.SDK_INT >= 31) runOnUiThread(() -> requestPermissions(new String[]{Manifest.permission.BLUETOOTH_CONNECT}, 71));
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int code, String[] perms, int[] res) {
+        super.onRequestPermissionsResult(code, perms, res);
+        if (code == 71 && web != null) {
+            boolean ok = res.length > 0 && res[0] == PackageManager.PERMISSION_GRANTED;
+            web.evaluateJavascript("window.__btPerm && window.__btPerm(" + ok + ")", null);
+        }
+    }
+
+    /** Classic Bluetooth (SPP) to the printer, written in small pieces so a small printer keeps up. */
+    @SuppressLint("MissingPermission")
+    private void sendToPrinter(String address, byte[] data) throws Exception {
+        synchronized (PRINT_LOCK) {
+            BluetoothAdapter ad = btAdapter();
+            if (ad == null) throw new Exception("No Bluetooth on this phone");
+            if (!ad.isEnabled()) throw new Exception("Bluetooth is off");
+            BluetoothDevice dev = ad.getRemoteDevice(address);
+            try { ad.cancelDiscovery(); } catch (SecurityException ignored) { }
+            BluetoothSocket s = null;
+            Exception last = null;
+            for (int attempt = 0; attempt < 3 && s == null; attempt++) {
+                BluetoothSocket t = null;
+                try {
+                    if (attempt == 0) t = dev.createRfcommSocketToServiceRecord(SPP);
+                    else if (attempt == 1) t = dev.createInsecureRfcommSocketToServiceRecord(SPP);
+                    else t = (BluetoothSocket) dev.getClass().getMethod("createRfcommSocket", int.class).invoke(dev, 1);
+                    t.connect();
+                    s = t;
+                } catch (Exception e) {
+                    last = e;
+                    try { if (t != null) t.close(); } catch (Exception ignored) { }
+                }
+            }
+            if (s == null) throw new Exception("Could not connect to the printer" + (last != null && last.getMessage() != null ? " (" + last.getMessage() + ")" : ""));
+            try (OutputStream os = s.getOutputStream()) {
+                for (int i = 0; i < data.length; i += 256) {
+                    os.write(data, i, Math.min(256, data.length - i));
+                    os.flush();
+                    Thread.sleep(25);
+                }
+                Thread.sleep(1500);   // let the printer finish before the connection closes
+            } finally {
+                try { s.close(); } catch (Exception ignored) { }
+            }
+        }
     }
 
     private Uri cacheFile(String name, String b64) throws Exception {

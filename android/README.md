@@ -6,6 +6,7 @@ It adds what a plain web view can't do:
 - **Share** bill / receipt / order pictures and PDF / Excel reports through the Android share sheet (WhatsApp etc.)
 - **Download** buttons save into the phone's *Downloads* folder; **Open** opens the PDF / Excel in another app
 - WhatsApp (`wa.me`), phone (`tel:`) and Google Drive links open in their own apps
+- **Print** to a paired 58 mm Bluetooth receipt printer (classic Bluetooth / SPP, ESC/POS) straight from the app (v1.2+)
 - `confirm()` pop-ups, the **back button** (closes a window → goes Home → leaves the app) and a "No internet" page
 
 The screens themselves still come from GitHub Pages, so changes to `Index.html` / `docs/` reach the APK without a new
