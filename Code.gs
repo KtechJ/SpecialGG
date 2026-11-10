@@ -811,13 +811,18 @@ function deliverOrder(p) {
 function orderBillLines_(o, net) {
   const re = /^([\d.]+) x (.+?) @ ₹([\d,.]+)/;
   const parts = str_(o.details).split(' | '), lines = [], other = [];
+  let extras = false;
   parts.forEach(function (t) {
     const m = t.match(re);
-    if (m) lines.push({ name: m[2], qty: Number(m[1]), price: Number(m[3].replace(/,/g, '')) });
-    else other.push(t);
+    if (!m) { other.push(t); return; }
+    lines.push({ name: m[2], qty: Number(m[1]), price: Number(m[3].replace(/,/g, '')) });
+    // an item's own expenses: "... = ₹1,400 + Cover silai ₹100 + Packing ₹50"
+    const tail = t.replace(/^.*? = ₹[\d,.]+/, ''), xre = / \+ (.+?) ₹([\d,.]+)/g;
+    let x;
+    while ((x = xre.exec(tail)) !== null) { lines.push({ name: '  + ' + x[1] + ' (' + m[2] + ')', qty: 1, price: Number(x[2].replace(/,/g, '')) }); extras = true; }
   });
   const calc = /Rui\/Kapas|Kapda · |Labour · /.test(str_(o.details));   // Rui + Kapda + Labour order with extra items
-  if (lines.length > 1 || (calc && lines.length)) {
+  if (lines.length > 1 || (calc && lines.length) || extras) {
     const sum = lines.reduce(function (a, l) { return a + l.qty * l.price; }, 0);
     if (calc) lines.unshift({ name: other.join(' | '), qty: 1, price: round2_(net - sum) });
     else if (Math.abs(sum - net) > 0.01) lines.push({ name: 'Adjustment / बदलाव', qty: 1, price: round2_(net - sum) });
