@@ -514,8 +514,9 @@ function showBill(b) {
 }
 /** Picture + the ways to send it. On a computer: Copy picture, then paste in WhatsApp. On a phone: Share picture. */
 function shareBlock(img, text, phone, file, what) {
-  lastShare = { img, text, file, phone };
+  lastShare = { img, text, file, phone, spec: lastCardSpec };
   return `<img src="${img}" style="width:100%;border:1px solid var(--line);border-radius:10px" alt="${esc(what)} picture">
+    <button class="btn full" onclick="printThermal()">\u{1F5A8} Print (58mm printer) · प्रिंट करें</button>
     <button class="btn full green" onclick="copyPicture()">Copy picture · फ़ोटो कॉपी करें</button>
     <a class="btn full green" target="_blank" href="${phoneLink(phone, 'Namaste! ' + what + ' from ' + D.shop.name + ' (picture below) / ' + D.shop.name + ' की रसीद')}">Open WhatsApp chat${phone ? ' with ' + esc(phone) : ''} · व्हाट्सएप खोलें</a>
     <div class="muted" style="margin:6px 0">Copy the picture, open the chat, then paste it (Mac: ⌘+V, phone: long-press → Paste).
@@ -524,6 +525,95 @@ function shareBlock(img, text, phone, file, what) {
     <a class="btn full alt" download="${esc(file)}" href="${img}">Download picture · डाउनलोड</a>
     <a class="btn full alt" target="_blank" href="${phoneLink(phone, text)}">Send as text message instead · टेक्स्ट भेजें</a>
     <button class="btn full alt" onclick="closeModal()">Done · हो गया</button>`;
+}
+/** Same bill / receipt drawn for a 58 mm thermal printer: 384 dots wide, black on white, big text. */
+function thermalImage(spec) {
+  const W = 384, PAD = 6, c = document.createElement('canvas'), x = c.getContext('2d');
+  const F = (w, size) => `${w} ${size}px system-ui, "Noto Sans Devanagari", sans-serif`;
+  const wrap = (text, font, width) => {
+    x.font = font;
+    const out = [];
+    String(text).split('\n').forEach(par => {
+      let cur = '';
+      par.split(' ').forEach(w => {
+        const t = cur ? cur + ' ' + w : w;
+        if (x.measureText(t).width > width && cur) { out.push(cur); cur = w; } else cur = t;
+        while (x.measureText(cur).width > width && cur.length > 1) {   // a single very long word
+          let k = cur.length; while (k > 1 && x.measureText(cur.slice(0, k)).width > width) k--;
+          out.push(cur.slice(0, k)); cur = cur.slice(k);
+        }
+      });
+      if (cur) out.push(cur);
+    });
+    return out;
+  };
+  // build a list of drawing steps first, so the picture is exactly as tall as needed
+  const ops = [];
+  const text = (t, font, align, h) => wrap(t, font, W - 2 * PAD).forEach(l => ops.push({ t: l, font, align, h }));
+  const line = (dash) => ops.push({ line: true, dash, h: 12 });
+  const gap = h => ops.push({ h });
+  const pair = (k, v, bold) => {
+    const kf = F(bold ? 'bold' : 'normal', bold ? 22 : 19), vf = F('bold', bold ? 24 : 20);
+    x.font = kf; const kw = x.measureText(k).width; x.font = vf; const vw = x.measureText(v).width;
+    if (!k.includes('\n') && kw + vw + 12 <= W - 2 * PAD) ops.push({ k, v, kf, vf, h: bold ? 30 : 26 });
+    else { text(k, kf, 'left', 24); text(v, vf, 'right', 26); }
+  };
+  text(D.shop.name, F('bold', 30), 'center', 36);
+  text(D.shop.address, F('normal', 18), 'center', 22);
+  text('Ph: ' + D.shop.phone, F('normal', 18), 'center', 22);
+  line(false);
+  text(spec.title, F('bold', 22), 'center', 28);
+  line(true);
+  spec.rows.forEach(([k, v]) => pair(String(k).replace(/ \| /g, '\n'), String(v)));
+  line(true);
+  if (spec.big) { gap(4); text(spec.big.label, F('normal', 19), 'center', 24); text(spec.big.value, F('bold', 38), 'center', 44); line(true); }
+  spec.summary.forEach(([k, v, strong]) => pair(String(k), String(v), !!strong));
+  if (spec.stamp) { gap(8); ops.push({ box: spec.stamp, h: 46 }); }
+  line(false);
+  text(spec.footer, F('normal', 17), 'center', 22);
+  gap(60);   // room to tear the paper
+  const H = ops.reduce((a, o) => a + o.h, 10);
+  c.width = W; c.height = H;
+  x.fillStyle = '#fff'; x.fillRect(0, 0, W, H);
+  x.fillStyle = '#000'; x.strokeStyle = '#000'; x.textBaseline = 'alphabetic';
+  let y = 4;
+  ops.forEach(o => {
+    if (o.line) {
+      x.lineWidth = 2; x.setLineDash(o.dash ? [6, 4] : []);
+      x.beginPath(); x.moveTo(PAD, y + 6); x.lineTo(W - PAD, y + 6); x.stroke(); x.setLineDash([]);
+    } else if (o.box) {
+      x.font = F('bold', 22); const bw = Math.min(W - 2 * PAD, x.measureText(o.box).width + 20);
+      x.lineWidth = 3; x.strokeRect((W - bw) / 2, y, bw, 38);
+      x.textAlign = 'center'; x.fillText(o.box, W / 2, y + 27, W - 2 * PAD - 10);
+    } else if (o.k !== undefined) {
+      x.font = o.kf; x.textAlign = 'left'; x.fillText(o.k, PAD, y + o.h - 7);
+      x.font = o.vf; x.textAlign = 'right'; x.fillText(o.v, W - PAD, y + o.h - 7);
+    } else if (o.t !== undefined) {
+      x.font = o.font; x.textAlign = o.align;
+      x.fillText(o.t, o.align === 'center' ? W / 2 : o.align === 'right' ? W - PAD : PAD, y + o.h - 6);
+    }
+    y += o.h;
+  });
+  return c.toDataURL('image/png');
+}
+/** Print: share the 58 mm picture to a printer app (RawBT / the printer's app). On a computer: browser print. */
+async function printThermal() {
+  const sh = lastShare;
+  if (!sh || !sh.spec) { toast('Nothing to print', true); return; }
+  const img = thermalImage(sh.spec), name = 'Print-' + sh.file;
+  try {
+    const file = new File([await (await fetch(img)).blob()], name, { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      toast('Choose RawBT (or your printer app) · RawBT चुनें');
+      await navigator.share({ files: [file] });
+      return;
+    }
+  } catch (e) { if (e && e.name === 'AbortError') return; }
+  const w = window.open('', '_blank');   // computer: print with the browser
+  if (!w) { toast('Allow pop-ups to print', true); return; }
+  w.document.write(`<html><head><title>${esc(name)}</title><style>@page{size:58mm auto;margin:0}body{margin:0}img{width:58mm}</style></head>
+    <body><img src="${img}" onload="setTimeout(function(){print()},300)"></body></html>`);
+  w.document.close();
 }
 async function copyPicture() {
   const sh = lastShare;
@@ -1666,7 +1756,9 @@ async function doVyPay(editId) {
 }
 
 /** Draws a receipt card as a picture (PNG data URL). Long values wrap onto their own lines. */
+let lastCardSpec = null;
 function cardImage(spec) {
+  lastCardSpec = spec;   // kept so the same bill can also be drawn for the 58 mm printer
   const W = 720, PAD = 40;
   const c = document.createElement('canvas'), x = c.getContext('2d');
   const F = (w, size) => `${w} ${size}px system-ui, "Noto Sans Devanagari", sans-serif`;
